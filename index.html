@@ -1,0 +1,1505 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gửi Lít – Một Chút Động Lực</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600;700&family=Dancing+Script:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#151515; --muted:#6f6a62; --line:rgba(0,0,0,.12); --pen:#2a3152;
+  --ease:cubic-bezier(.7,0,.2,1); --out:cubic-bezier(.16,1,.3,1);
+  --ew:360px; --eh:236px; --bs:1.18;
+  --noise:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --fiber:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012 .35' numOctaves='2' seed='4'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+@media (max-width:700px){ :root{ --ew:250px; --eh:164px; --bs:1.08; } }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#f3dcb4;color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+/* ---------- background ---------- */
+#bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:#e9c98f;transition:filter 1.2s var(--out)}
+body.focus #bg{filter:blur(8px)}
+.bg-move{position:absolute;inset:-6%;will-change:transform}
+#sky{position:absolute;inset:0;width:100%;height:100%;display:block;
+  transform:scale(1.25);filter:blur(14px);opacity:0;
+  transition:transform 3.2s var(--out),filter 2.2s var(--out),opacity 1.4s}
+body.ready #sky{opacity:1;transform:scale(1);filter:var(--grade)}
+
+#sky{image-rendering:pixelated;image-rendering:crisp-edges}
+#petals{position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;opacity:0;transition:opacity 2s 1s}
+body.ready #petals{opacity:1}
+#bgVideo,#bgPhoto{position:absolute;inset:-3%;width:106%;height:106%;object-fit:cover;
+  transform:scale(1.25);filter:blur(14px);opacity:0;transition:transform 3.2s var(--out),filter 2.2s var(--out),opacity 1.4s}
+#bgVideo{image-rendering:pixelated}
+#bgPhoto{object-position:30% 50%}
+body.ready #bgPhoto{animation:breathe 30s ease-in-out infinite alternate,cloudDrift 70s ease-in-out infinite alternate}
+@keyframes cloudDrift{to{object-position:70% 50%}}
+/* lớp sáng mềm cho ảnh thêm mơ màng */
+.dreamy{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(60% 50% at 30% 15%,rgba(255,240,205,.55),transparent 70%),
+             radial-gradient(70% 60% at 80% 85%,rgba(255,214,150,.22),transparent 70%),
+             linear-gradient(rgba(255,248,232,.18),rgba(255,236,200,.08));
+  mix-blend-mode:screen}
+body.ready #bgVideo,body.ready #bgPhoto{opacity:1;transform:scale(1);filter:var(--grade)}
+@keyframes breathe{to{scale:1.06}}
+
+/* ---------- con trỏ hoa hướng dương (con trỏ hệ thống) ---------- */
+html,body,#stage,#stage.dragging{cursor:var(--cur,auto)}
+button,a,.slot,.mood,.sh-actions button{cursor:var(--cur-hover,pointer)!important}
+
+/* ---------- nút nhạc + nút vào ---------- */
+.sound{position:fixed;top:14px;right:16px;z-index:21;display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;font-size:11px;letter-spacing:.04em;transition:opacity .6s}
+.sound i{display:flex;gap:2px;align-items:flex-end;height:12px}
+.sound i b{width:2px;background:var(--ink);border-radius:1px;animation:eq 1s ease-in-out infinite}
+.sound i b:nth-child(2){animation-delay:-.3s}.sound i b:nth-child(3){animation-delay:-.6s}
+.sound.off i b{animation:none;height:3px}
+@keyframes eq{0%,100%{height:3px}50%{height:12px}}
+body.loading .sound{opacity:0;pointer-events:none}
+#enterBtn{margin-top:34px;padding:14px 28px;border-radius:999px;border:1px solid var(--ink);font-size:12px;letter-spacing:.16em;text-transform:uppercase;opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .6s,transform .8s var(--out),background .3s,color .3s}
+#enterBtn.show{opacity:1;transform:none;pointer-events:auto}
+#enterBtn:hover{background:var(--ink);color:#f4ead8}
+#loader small{margin-top:12px;font-size:10px;letter-spacing:.1em;color:var(--muted);opacity:0;transition:opacity .6s}
+#loader small.show{opacity:1}
+.bg-tint{position:absolute;inset:0;pointer-events:none;transition:opacity 2s;opacity:0}
+.bg-tint.vui{background:radial-gradient(70% 55% at 45% 38%,rgba(255,228,150,.5),transparent 70%),linear-gradient(rgba(255,245,215,.08),rgba(255,210,120,.12));mix-blend-mode:screen}
+.bg-tint.buon{background:linear-gradient(rgba(70,90,120,.45),rgba(40,55,80,.35))}
+.bg-tint.chan{background:radial-gradient(120% 90% at 50% 40%,rgba(45,50,60,.25),rgba(20,22,28,.6)),linear-gradient(rgba(70,75,85,.45),rgba(35,38,45,.5))} /* chán: u ám, xám tối */
+body[data-mood=vui] .bg-tint.vui,body[data-mood=buon] .bg-tint.buon,body[data-mood=chan] .bg-tint.chan{opacity:1}
+body[data-mood=chan] .dreamy,body[data-mood=buon] .dreamy{opacity:0} .dreamy{transition:opacity 2s}
+body{--grade:saturate(1.05) brightness(1.03)}
+body[data-mood=vui]{--grade:saturate(1.25) brightness(1.1) contrast(1.02)}
+body[data-mood=buon]{--grade:saturate(.35) brightness(.8) contrast(.95)}
+body[data-mood=chan]{--grade:saturate(.25) brightness(.68) contrast(.92) sepia(.12)}
+#fx{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.leak{position:fixed;inset:-20%;z-index:1;pointer-events:none;mix-blend-mode:screen;opacity:.55;
+  background:radial-gradient(40% 35% at 18% 22%,rgba(255,214,150,.55),transparent 70%),radial-gradient(30% 30% at 85% 12%,rgba(255,180,190,.35),transparent 70%);
+  animation:drift 18s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate(4%,3%) scale(1.08)}}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(70,45,10,.28))}
+.grain{position:fixed;inset:-50%;z-index:40;pointer-events:none;background:var(--noise);background-size:220px;opacity:.07;mix-blend-mode:overlay;animation:grain 1s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-1%)}80%{transform:translate(3%,3%)}}
+
+/* ---------- loader ---------- */
+#loader{position:fixed;inset:0;z-index:60;background:#f4ead8;display:flex;flex-direction:column;align-items:center;justify-content:center;clip-path:inset(0 0 0 0);transition:clip-path 1.2s var(--ease)}
+#loader.done{clip-path:inset(0 0 100% 0)}
+#loader h1{font-family:"Cormorant Garamond",serif;font-weight:500;font-size:clamp(56px,11vw,150px);letter-spacing:-.03em;line-height:1;display:flex;overflow:hidden}
+#loader h1 span{display:inline-block;transform:translateY(110%);animation:up 1s var(--out) forwards;animation-delay:calc(var(--i) * 60ms + 150ms);white-space:pre}
+#loader p{font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-top:14px;opacity:0;animation:fade 1s .8s forwards}
+#loader .count{position:absolute;right:24px;bottom:18px;font-family:"Cormorant Garamond",serif;font-size:clamp(40px,7vw,88px);line-height:1}
+#loader .bar{position:absolute;left:0;bottom:0;height:2px;background:var(--ink);width:0}
+@keyframes up{to{transform:none}}
+@keyframes fade{to{opacity:1}}
+
+/* ---------- chrome ---------- */
+.glass{background:rgba(255,250,240,.5);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);border:1px solid rgba(255,255,255,.65);box-shadow:0 10px 40px -20px rgba(80,50,10,.35)}
+header{position:fixed;top:14px;left:50%;transform:translateX(-50%);display:flex;white-space:nowrap;gap:22px;align-items:baseline;padding:9px 20px;border-radius:999px;z-index:20;font-size:11px;letter-spacing:.02em;transition:opacity .6s}
+header .logo{font-family:"Cormorant Garamond",serif;font-size:20px;font-weight:600;letter-spacing:-.01em}
+header span{color:var(--muted)}
+.side{position:fixed;top:50%;font-size:10px;letter-spacing:.12em;text-transform:uppercase;transform:translateY(-50%);z-index:5;transition:opacity .6s;color:#2b2416;text-shadow:0 1px 10px rgba(255,240,210,.8)}
+.side.l{left:20px}.side.r{right:20px}
+.watermark{position:fixed;left:7%;bottom:15%;font-family:"Cormorant Garamond",serif;font-size:clamp(56px,9vw,132px);font-weight:500;letter-spacing:-.035em;line-height:.8;z-index:2;pointer-events:none;color:#fffaf0;text-shadow:0 2px 6px rgba(30,70,20,.45),0 6px 40px rgba(30,70,20,.55);transition:opacity .8s,transform 1.4s var(--out)}
+.watermark em{font-style:italic;font-weight:400}
+.watermark small{display:block;font-size:.12em;letter-spacing:.3em;text-transform:uppercase;font-family:Inter;font-weight:600;margin-top:18px;opacity:.9}
+body.loading .watermark{opacity:0;transform:translateY(40px)}
+
+.meta{position:fixed;top:70px;left:20px;width:250px;z-index:6;padding:16px 16px 14px;border-radius:16px;transition:opacity .6s,transform .8s var(--out)}
+.meta{display:none!important} /* đã ẩn bảng thông tin thư (tên, số, ngày...) */
+.meta h1{font-family:"Cormorant Garamond",serif;font-weight:500;font-size:34px;line-height:.92;text-transform:uppercase;letter-spacing:-.01em;margin-bottom:14px}
+.meta .row{display:flex;justify-content:space-between;gap:12px;font-size:10.5px;padding:5px 0;border-top:1px solid var(--line)}
+.meta .row b{font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-size:9px}
+.meta .note{font-family:"Cormorant Garamond",serif;font-style:italic;font-size:17px;margin-top:10px;color:#3d3528}
+.m{display:block;overflow:hidden}
+.m>span{display:block;transform:translateY(105%)}
+.meta.in .m>span{animation:up .8s var(--out) forwards;animation-delay:calc(var(--d) * 45ms)}
+body.loading .meta,body.loading header,body.loading .side,body.loading .dots,body.loading .hint{opacity:0}
+
+.dots{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:9px;z-index:6;padding:9px 14px;border-radius:999px;transition:opacity .6s}
+.dots{display:none!important} /* đã ẩn thanh chấm chuyển thư */
+.dots button{width:6px;height:6px;border-radius:50%;background:rgba(40,30,15,.25);transition:background .3s,transform .3s}
+.dots button.on{background:var(--ink);transform:scale(1.35)}
+.hint{position:fixed;bottom:66px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#fffaf0;text-shadow:0 1px 12px rgba(60,35,5,.7);z-index:6;transition:opacity .6s}
+
+/* ---------- stage ---------- */
+#stage{position:fixed;inset:0;perspective:1600px;perspective-origin:50% 40%;z-index:3;cursor:grab;touch-action:none;transition:transform 1s var(--out),filter 1s var(--out),opacity .8s}
+#stage.dragging{cursor:grabbing}
+.slot{position:absolute;left:50%;top:46%;width:var(--ew);height:var(--eh);margin:calc(var(--eh) / -2) 0 0 calc(var(--ew) / -2);transform-style:preserve-3d;will-change:transform}
+.tilt{width:100%;height:100%;transform-style:preserve-3d}
+
+/* ---------- card (two-sided envelope) ---------- */
+.card{position:relative;width:var(--ew);height:var(--eh);transform-style:preserve-3d;transition:transform 1.2s var(--ease)}
+.card.flip{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;border-radius:5px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.face.back{transform:none}
+/* vân giấy + vết loang màu nước */
+.tex::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(38% 28% at 22% 72%,rgba(140,95,40,.2),transparent 70%),radial-gradient(30% 24% at 78% 30%,rgba(140,95,40,.16),transparent 70%),
+             radial-gradient(26% 30% at 62% 82%,rgba(255,255,255,.3),transparent 70%),radial-gradient(22% 18% at 40% 20%,rgba(120,80,30,.12),transparent 70%),var(--noise);
+  background-size:auto,auto,auto,auto,160px;mix-blend-mode:multiply;opacity:.6}
+.flora{position:absolute;left:50%;top:6%;width:44%;transform:translateX(-50%);display:block;pointer-events:none;z-index:1}
+.env.flapback .flora{opacity:0}
+.glare{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:9;background:radial-gradient(circle at var(--gx,30%) var(--gy,20%),rgba(255,255,255,.75),rgba(255,255,255,0) 55%);mix-blend-mode:soft-light;opacity:var(--go,.5)}
+
+/* front: address side */
+.front{background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 45%,rgba(0,0,0,.07)),var(--c);
+  box-shadow:0 40px 50px -30px rgba(60,35,5,.55),0 3px 8px rgba(0,0,0,.12),inset 0 0 0 1px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.7)}
+.front.air::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:calc(var(--ew) * .024);z-index:1;
+  background:repeating-linear-gradient(135deg,#c8453c 0 14px,transparent 14px 22px,#2f5c9c 22px 36px,transparent 36px 44px);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);opacity:.85}
+.f-from{position:absolute;left:8%;top:10%;font-family:"Dancing Script",cursive;font-size:calc(var(--ew) * .042);color:var(--pen);opacity:.75;z-index:2}
+.f-to{position:absolute;left:30%;top:47%;width:58%;z-index:2;color:var(--pen)}
+.f-name{font-family:"Dancing Script",cursive;font-weight:700;font-size:calc(var(--ew) * .088);line-height:1.1;transform:rotate(-2deg);transform-origin:left}
+.f-line{font-family:"Dancing Script",cursive;font-size:calc(var(--ew) * .04);border-bottom:1px solid rgba(0,0,0,.18);padding:calc(var(--ew) * .008) 0 calc(var(--ew) * .002);margin-top:calc(var(--ew) * .01)}
+.f-no{position:absolute;left:8%;bottom:9%;font-size:calc(var(--ew) * .024);letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:rgba(0,0,0,.42);z-index:2}
+.f-air{position:absolute;left:8%;bottom:16%;font-size:calc(var(--ew) * .022);letter-spacing:.12em;font-weight:700;color:#2f5c9c;z-index:2}
+.stamp{position:absolute;right:7%;top:10%;width:19%;aspect-ratio:.82;z-index:3;padding:calc(var(--ew) * .011);background:#fffdf7;transform:rotate(3deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,radial-gradient(circle,transparent 2.2px,#000 2.7px) -4px -4px/7px 7px round;
+  mask:linear-gradient(#000 0 0) content-box,radial-gradient(circle,transparent 2.2px,#000 2.7px) -4px -4px/7px 7px round;
+  filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.stamp svg{display:block;width:100%;height:100%}
+.postmark{position:absolute;right:15%;top:6%;width:30%;z-index:4;color:rgba(35,35,60,.6);transform:rotate(-10deg);mix-blend-mode:multiply;pointer-events:none}
+
+/* back: flap side */
+.env{position:absolute;inset:0;border-radius:5px;box-shadow:0 40px 50px -30px rgba(60,35,5,.55),0 3px 8px rgba(0,0,0,.12)}
+.env .inside{position:absolute;inset:0;border-radius:5px;filter:url(#rough);background:var(--liner,#f3ede1);box-shadow:inset 0 0 30px rgba(0,0,0,.25)}
+.env .inside::before,.env.flapback .flap::before{content:"";position:absolute;inset:0;opacity:.35;background:radial-gradient(circle,var(--s) 0 1.4px,transparent 1.9px) 0 0/11px 11px}
+.env .paper{position:absolute;left:5%;right:5%;top:6%;bottom:5%;background:#fbf8f0;border-radius:2px;z-index:2;padding:7% 8%;transition:transform 1s var(--out);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.env .paper::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:linear-gradient(90deg,rgba(0,0,0,.05),rgba(0,0,0,.12),rgba(0,0,0,.05));box-shadow:0 1px 0 rgba(255,255,255,.8)}
+.env .paper .pl{font-family:"Dancing Script",cursive;text-transform:none;letter-spacing:0;font-weight:700;font-size:calc(var(--ew) * .065);margin-bottom:6%;color:var(--pen)}
+.env .paper i{display:block;height:2px;background:rgba(42,49,82,.18);margin-bottom:6%;border-radius:2px}
+.env .paper i:nth-child(3){width:86%}.env .paper i:nth-child(4){width:64%}
+.pk{position:absolute;inset:0;z-index:3;filter:url(#rough) drop-shadow(0 -1px 1.6px rgba(90,55,15,.28));pointer-events:none}
+.pk>div{position:absolute;inset:0;border-radius:3px;background:linear-gradient(160deg,rgba(255,255,255,.25),rgba(0,0,0,.05)),var(--c);box-shadow:inset 0 0 22px rgba(110,70,25,.3)}
+.pk-l{clip-path:polygon(0 0,52% 54%,0 100%);filter:brightness(.96)}
+.pk-r{clip-path:polygon(100% 0,48% 54%,100% 100%);filter:brightness(.94)}
+.pk-b>div{clip-path:polygon(0 100%,50% 45%,100% 100%)}
+.env .b-no{position:absolute;right:7%;bottom:8%;z-index:4;font-family:"Dancing Script";font-size:calc(var(--ew) * .045);color:var(--pen);opacity:.7}
+.flapw{position:absolute;inset:0;z-index:4;filter:url(#rough) drop-shadow(0 2px 2.5px rgba(90,55,15,.3));pointer-events:none}
+.flap{position:absolute;left:0;right:0;top:0;height:62%;border-radius:3px 3px 0 0;transform-origin:top center;transition:transform .85s var(--ease);
+  background:radial-gradient(60% 70% at 50% 35%,rgba(255,250,235,.45),transparent 75%),linear-gradient(to bottom,rgba(255,255,255,.2),rgba(0,0,0,.06)),var(--c);
+  clip-path:polygon(0 0,100% 0,100% 3%,54% 92%,50% 96%,46% 92%,0 3%)}
+.env.flapback .flapw{z-index:1}
+.env.flapback .flap{background:var(--liner,#f3ede1)}
+.env.open .flap{transform:perspective(900px) rotateX(180deg)}
+.env.out .paper{transform:translateY(-60%)}
+.seal{position:absolute;left:50%;top:60%;width:calc(var(--ew) * .23);transform:translate(-50%,-50%);z-index:5;filter:drop-shadow(0 2px 2px rgba(0,0,0,.35));transition:transform .7s var(--out),opacity .5s}
+.seal svg{display:block;width:100%}
+.env.broke .seal{transform:translate(-50%,-50%) translate(60px,-90px) rotate(50deg) scale(.6);opacity:0}
+
+/* ---------- focus overlay ---------- */
+body.focus #stage{transform:scale(.85);filter:blur(10px);opacity:0;pointer-events:none}
+body.focus .meta,body.focus .dots,body.focus .hint,body.focus .side,body.focus .watermark{opacity:0;pointer-events:none}
+body.focus .meta{transform:translateX(-30px)}
+#scene{position:fixed;inset:0;z-index:10;pointer-events:none;visibility:hidden}
+#scene.on{pointer-events:auto;visibility:visible}
+.back-btn{position:absolute;top:70px;left:20px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:10px 16px;border-radius:999px;opacity:0;transition:opacity .5s}
+#scene.on .back-btn{opacity:1}
+.holder{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%) scale(var(--bs));perspective:1400px;transition:top 1s var(--ease),opacity .8s,transform 1.1s var(--out)}
+.holder.pre{opacity:0;transform:translate(-50%,10%) scale(calc(var(--bs) * .7))}
+.holder.center{top:52%}
+.holder.gone{opacity:0;transform:translate(-50%,-80%) scale(calc(var(--bs) * .9))}
+.tiltw{transform-style:preserve-3d}
+.prompt{position:absolute;left:50%;width:min(560px,calc(100% - 32px));transform:translateX(-50%);top:calc(36% + var(--eh) * var(--bs) / 2 + 34px);text-align:center;padding:22px 20px 24px;border-radius:22px;transition:opacity .5s,transform .7s var(--out)}
+.prompt.hide{opacity:0;transform:translate(-50%,24px);pointer-events:none}
+.prompt .lbl{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.prompt h2{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:clamp(28px,4vw,42px);line-height:1.02;margin-bottom:20px}
+.prompt h2 em{font-style:italic}
+.moods{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.mood{position:relative;overflow:hidden;isolation:isolate;min-width:118px;padding:12px 20px;border:1px solid rgba(21,21,21,.7);border-radius:999px;font-size:13px;font-weight:600;letter-spacing:.02em;background:rgba(255,255,255,.35);transition:color .45s var(--ease),transform .4s var(--out)}
+.mood::before{content:"";position:absolute;inset:0;background:var(--mc);transform:translateY(101%);border-radius:50% 50% 0 0;transition:transform .5s var(--ease),border-radius .5s;z-index:-1}
+.mood:hover{color:#fff;border-color:var(--mc)}
+.mood:hover::before{transform:none;border-radius:0}
+.mood small{display:block;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:13.5px;font-weight:400;opacity:.75;margin-top:1px}
+.anim-i{opacity:0;transform:translateY(16px);transition:opacity .6s,transform .8s var(--out)}
+.prompt.show .anim-i{opacity:1;transform:none}
+
+/* ---------- reader ---------- */
+#reader{position:fixed;inset:0;z-index:12;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none;visibility:hidden}
+#reader.on{pointer-events:auto;visibility:visible}
+#reader{perspective:1600px}
+.tilt3d{width:min(640px,100%);transform-style:preserve-3d;will-change:transform}
+.sheet-wrap{position:relative;width:100%;max-height:86vh;display:flex;border-radius:3px;opacity:0}
+/* tờ giấy chính: mép xù, giấy ấm, vết loang, cháy mép, đổ bóng nhiều lớp */
+.paper-bg{position:absolute;inset:0;z-index:0;border-radius:3px;filter:url(#rough);
+  background:radial-gradient(120% 90% at 50% 38%,#fffbf3 0%,#fbf3e3 55%,#f0e1c4 100%);
+  box-shadow:0 1px 1px rgba(0,0,0,.08),0 12px 22px -8px rgba(60,35,5,.28),0 60px 90px -40px rgba(50,30,5,.6),inset 0 0 55px rgba(170,125,55,.24)}
+.paper-bg::before{content:"";position:absolute;inset:0;border-radius:inherit;mix-blend-mode:multiply;opacity:.4;
+  background:radial-gradient(30% 22% at 14% 82%,rgba(150,105,45,.22),transparent 70%),radial-gradient(26% 20% at 88% 18%,rgba(150,105,45,.16),transparent 70%),radial-gradient(20% 16% at 70% 64%,rgba(150,105,45,.1),transparent 70%),var(--noise);
+  background-size:auto,auto,auto,180px}
+.paper-bg::after{content:"";position:absolute;inset:0;border-radius:inherit;mix-blend-mode:multiply;opacity:.16;
+  background:radial-gradient(45% 35% at 100% 0%,var(--mc,#d99a1e),transparent 70%),radial-gradient(40% 30% at 0% 100%,var(--mc,#d99a1e),transparent 70%)}
+/* các tờ giấy xếp chồng phía sau */
+.under{position:absolute;inset:0;z-index:-1;border-radius:3px;filter:url(#rough);background:#f4e9d3;
+  box-shadow:0 24px 44px -20px rgba(50,30,5,.5),inset 0 0 40px rgba(160,115,45,.22)}
+.under.u1{transform:rotate(-3.4deg) translate(-12px,10px)}
+.under.u2{transform:rotate(2.6deg) translate(14px,16px);background:#eee0c3}
+.paper-glare{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:3px;mix-blend-mode:soft-light;
+  background:radial-gradient(circle at var(--lx,30%) var(--ly,20%),rgba(255,255,255,.55),rgba(255,255,255,0) 55%)}
+.flora-corner{position:absolute;right:-26px;top:-34px;width:170px;z-index:5;transform:rotate(16deg);pointer-events:none;filter:drop-shadow(0 2px 2px rgba(60,35,5,.15))}
+.flora-corner .flora{position:static;transform:none;width:100%}
+.letter-seal{position:absolute;right:34px;bottom:-30px;width:92px;z-index:6;transform:rotate(-10deg);pointer-events:none;filter:drop-shadow(0 4px 4px rgba(0,0,0,.3))}
+.letter-seal svg{display:block;width:100%}
+#reader.on .sheet-wrap{animation:unfold 1.5s var(--out) forwards}
+#reader.bye .sheet-wrap{animation:away .55s var(--ease) forwards}
+@keyframes unfold{0%{opacity:0;transform:perspective(1400px) translateY(35vh) rotateX(78deg) scale(.55)}25%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes away{from{opacity:1;transform:none}to{opacity:0;transform:perspective(1400px) translateY(20vh) rotateX(-30deg) scale(.85)}}
+.creases{position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:linear-gradient(to bottom,transparent calc(33.33% - 2px),rgba(0,0,0,.07) 33.33%,rgba(255,255,255,.9) calc(33.33% + 1px),transparent calc(33.33% + 4px),transparent calc(66.66% - 2px),rgba(0,0,0,.07) 66.66%,rgba(255,255,255,.9) calc(66.66% + 1px),transparent calc(66.66% + 4px))}
+.fold-shade{position:absolute;inset:0;pointer-events:none;z-index:3;border-radius:inherit;opacity:0;
+  background:linear-gradient(to bottom,rgba(60,40,10,.28),rgba(60,40,10,0) 33.3%,rgba(255,255,255,.25) 33.4%,rgba(60,40,10,.08) 66.6%,rgba(60,40,10,.3) 66.7%,rgba(60,40,10,.05))}
+#reader.on .fold-shade{animation:shade 1.6s var(--out)}
+@keyframes shade{0%,20%{opacity:1}100%{opacity:0}}
+.sheet{position:relative;z-index:1;overflow:auto;width:100%;padding:clamp(28px,6vw,58px) clamp(24px,6vw,60px) clamp(28px,5vw,48px)}
+.sh-top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:26px}
+.mstamp{position:absolute;right:clamp(20px,5vw,48px);top:62px;z-index:2;transform:rotate(-9deg);color:var(--mc);border:2px solid currentColor;outline:1px solid currentColor;outline-offset:3px;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;opacity:.82;mix-blend-mode:multiply;text-align:center;line-height:1.3}
+.mstamp small{display:block;font-size:8px;letter-spacing:.2em;font-weight:600}
+.greet{font-family:"Dancing Script",cursive;font-size:42px;margin-bottom:14px;color:var(--pen);text-shadow:0 0 .6px rgba(30,35,70,.35)}
+.sheet p.body{font-family:"Cormorant Garamond",serif;font-size:21px;line-height:1.66;margin-bottom:16px;color:#2a251c;text-shadow:0 0 .5px rgba(60,40,20,.35)}
+.sign{font-family:"Dancing Script",cursive;font-size:28px;text-align:right;margin-top:22px;color:var(--pen)}
+.sh-actions{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:40px;padding-top:18px;border-top:1px dashed rgba(120,90,50,.3)}
+.sh-actions button{font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:6px 0;border-bottom:1px solid currentColor}
+.pressed{position:absolute;left:-26px;bottom:-30px;width:120px;z-index:4;pointer-events:none;transform:rotate(-18deg);filter:drop-shadow(0 3px 3px rgba(0,0,0,.2)) saturate(.75)}
+.tape{position:absolute;left:8px;bottom:36px;width:84px;height:24px;z-index:5;transform:rotate(28deg);background:rgba(255,250,225,.6);box-shadow:0 1px 2px rgba(0,0,0,.1);backdrop-filter:blur(1px)}
+.tape.tape-top{left:50%;top:-13px;bottom:auto;width:118px;height:26px;transform:translateX(-50%) rotate(-3deg)}
+.ln{opacity:0;transform:translateY(14px);transition:opacity .8s,transform 1s var(--out)}
+#reader.on .ln{opacity:1;transform:none}
+
+/* ---------- petals + cursor ---------- */
+.petal{position:fixed;width:10px;height:24px;border-radius:50%;background:linear-gradient(#ffd84a,#e58a10);z-index:15;pointer-events:none}
+.pill{position:fixed;left:0;top:0;z-index:30;pointer-events:none;padding:8px 13px;border-radius:999px;background:rgba(21,21,21,.88);color:#fff;font-size:10px;letter-spacing:.12em;text-transform:uppercase;transform:translate(-50%,-50%) scale(0);transition:transform .35s var(--out)}
+.pill.on{transform:translate(-50%,-50%) scale(1)}
+
+@media (max-width:700px){
+  .meta{top:auto;bottom:70px;left:12px;right:12px;width:auto;padding:12px 14px}
+  .meta h1{font-size:24px;margin-bottom:8px}
+  .meta .row:nth-of-type(n+3),.meta .note{display:none}
+  .side,.hint{display:none}
+  .watermark{left:16px;bottom:auto;top:84px;font-size:46px}
+  header span:last-child{display:none}
+  .slot{top:44%}
+  .holder{top:30%}
+  .prompt{top:calc(30% + var(--eh) * var(--bs) / 2 + 26px)}
+  .pressed{width:80px;left:-14px;bottom:-20px}.tape{display:none}
+  .flora-corner{width:110px;right:-10px;top:-24px}.letter-seal{width:66px;right:18px;bottom:-22px}.under.u1{transform:rotate(-2.4deg) translate(-6px,6px)}.under.u2{transform:rotate(1.8deg) translate(7px,10px)}
+}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01s!important;animation-duration:.01s!important}}
+</style>
+</head>
+<body class="loading">
+
+<div id="bg"><div class="bg-move" id="bgMove"><video id="bgVideo" muted loop playsinline autoplay preload="auto" hidden></video><img id="bgPhoto" alt="" hidden><canvas id="sky"></canvas></div><div class="dreamy"></div><div class="bg-tint vui"></div><div class="bg-tint buon"></div><div class="bg-tint chan"></div></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency=".04" numOctaves="3" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/></filter>
+  <filter id="wcf"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.6" xChannelSelector="R" yChannelSelector="G"/><feGaussianBlur stdDeviation=".22"/></filter>
+</defs></svg>
+<canvas id="fx"></canvas>
+<canvas id="petals"></canvas>
+<div class="leak"></div>
+<div class="vignette"></div>
+
+<div id="loader">
+  <h1 id="ldTitle"></h1>
+  <p>Một Chút Động Lực</p>
+  <button id="enterBtn">Mở hộp thư</button>
+  <small id="enterNote">bật loa để nghe nhạc nhé ♪</small>
+  <div class="count" id="ldCount">0</div>
+  <div class="bar" id="ldBar"></div>
+</div>
+
+<header class="glass"><span class="logo">Lít.</span><span>Hộp thư</span><span>Cánh đồng hướng dương</span></header>
+<div class="side l">Hộp thư (<span id="total"></span>)</div>
+<div class="side r"><span id="cur">01</span> / <span id="tot2"></span></div>
+<div class="watermark">Gửi <em>Lít</em><small>Một Chút Động Lực</small></div>
+<aside class="meta glass" id="meta"></aside>
+
+<div id="stage"></div>
+
+<div class="hint">Cuộn hoặc kéo để xem thư — bấm để mở</div>
+<nav class="dots glass" id="dots"></nav>
+
+<section id="scene">
+  <button class="back-btn glass" id="back">← Hộp thư</button>
+  <div class="holder pre" id="holder"></div>
+  <div class="prompt glass hide" id="prompt">
+    <div class="lbl anim-i">Mở đầu thư</div>
+    <h2 class="anim-i" style="transition-delay:.08s">Ngày hôm nay,<br><em>Lít cảm thấy…</em></h2>
+    <div class="moods anim-i" id="moods" style="transition-delay:.16s"></div>
+  </div>
+</section>
+
+<section id="reader">
+  <div class="tilt3d" id="letterTilt">
+  <div class="sheet-wrap" id="sheetWrap">
+    <div class="under u2"></div><div class="under u1"></div>
+    <div class="paper-bg"></div>
+    <article class="sheet" id="sheet"></article>
+    <div class="creases"></div>
+    <div class="fold-shade"></div>
+    <div class="paper-glare"></div>
+    <div class="flora-corner" id="floraCorner"></div>
+    <div class="letter-seal" id="letterSeal"></div>
+    <div class="tape"></div>
+    <div class="tape tape-top"></div>
+    <svg class="pressed" viewBox="0 0 120 120" id="pressed"></svg>
+  </div>
+  </div>
+</section>
+
+<div class="grain"></div>
+<div class="pill" id="pill" hidden></div>
+<button class="sound glass" id="soundBtn" aria-label="Bật/tắt nhạc"><i><b></b><b></b><b></b></i><span>Nhạc: bật</span></button>
+
+<script>
+/* =========================================================
+   SỬA NỘI DUNG Ở ĐÂY
+   1) MOOD_LETTERS: 3 lá thư — mỗi cảm xúc (vui / buon / chan) là một thư.
+      Mở phong bì (thiệp) nào cũng đọc cùng lá thư của cảm xúc đã chọn.
+      - body: mỗi chuỗi trong [ ... ] là một đoạn văn
+      - open: lời mở đầu (bỏ trống thì là "Gửi Lít,")
+      - sign: lời ký tên
+   2) LETTERS: các phong bì/thiệp (chỉ là vẻ ngoài khác nhau)
+      - title, date, note, addr: chữ trên thiệp
+      - color: màu phong bì, seal: màu sáp, liner: màu lót bên trong
+      - stamp: hình con tem (sunflower | rain | bowl | sea | heart | moon)
+      - airmail: true để có viền thư máy bay xanh đỏ
+      - (tuỳ chọn) moods: { vui: {...} } nếu sau này muốn một thiệp có thư riêng
+   ========================================================= */
+const SENDER = "người viết thư";   // dòng "Từ:" trên phong bì
+const PLACE  = "HÀ NỘI";            // chữ trên dấu bưu điện
+// Nền đang được vẽ bằng code (kiểu anime). Nếu bạn có ảnh nền tạo bằng AI,
+// bỏ ảnh vào cùng thư mục rồi ghi tên file vào đây, ví dụ: "nen-anime.jpg"
+// (cỏ, hoa và cánh hoa bay vẫn được vẽ đè lên phía dưới ảnh)
+// Ảnh nền: những đám mây bồng bềnh (Unsplash, miễn phí). Không tải được thì tự dùng nen.jpg
+// (ảnh hướng dương mờ ảo trước đó: photo-1531235291666-5bbfb153c4cb)
+const BG_IMAGE = "https://images.unsplash.com/photo-1501630834273-4b5604d2ee31?auto=format&q=82&w=" + (innerWidth < 700 ? 1400 : 2600);
+const BG_IMAGE_FALLBACK = "nen.jpg";
+// Âm lượng (0 = tắt, 1 = to): nhạc nền và tiếng hoa xào xạc khi lướt chuột
+const MUSIC_VOLUME = 0.14;
+const RUSTLE_VOLUME = 0.35;
+// Video nền: để file video cùng thư mục và ghi tên vào đây ("" = dùng cảnh pixel tự vẽ).
+// Bản đang dùng là bản xem thử có chữ motionsites → tải bản sạch từ tài khoản motionsites,
+// đặt tên nen-video.mp4 và chép đè lên file cũ là xong.
+const BG_VIDEO = ""; // đang dùng ảnh nen.jpg; muốn quay lại video thì ghi "nen-video.mp4" và để BG_IMAGE = ""
+
+const MOODS = {
+  vui:  { label: "Vui",  hint: "cười thêm chút nữa", color: "#d99a1e" },
+  buon: { label: "Buồn", hint: "để thư ôm một chút", color: "#4f6f9c" },
+  chan: { label: "Chán", hint: "làm gì đó cùng thư", color: "#6b7079" },
+};
+
+// ---- 3 lá thư theo cảm xúc (chữ mẫu, sửa lại sau) ----
+const MOOD_LETTERS = {
+  vui: {
+    open: "Hilo",
+    body: [
+      "Hôm nay tươi dữ ta, cứ giữ năng lượng tích cực như ri nèe biết răn hog😏😏",
+      "Do Lít cười xinh lắm á =))) Giữ nụ cười đó thật lâu nha. Nó hợp với Lít lắm.",
+    ],
+    sign: "— Tí",
+  },
+  buon: {
+    open: "Hello ní nha =))))",
+    body: [
+      "Bữa ni gặp cgi mà buồn z ní, ăn cái deo j mà buồn qài 😤",
+      "Mà nè, buồn thì cứ buồn xíu đi, không sao hết á. Ai mà chẳng có ngày mệt, ngày chán. Mệt thì nghỉ, chán thì đi chơi, rồi hết buồn, có chi mô",
+      "Tí biết dạo ni Lít gồng nhiều lắm. Chuyện học, chuyện làm, chuyện nhà... cái chi cũng tự ôm hết vô người. Lít giỏi lắm á, chịu được nhiều vậy là ghê lắm rồi. Nhưng mà giỏi cỡ mô thì cũng là người thôi, cũng cần được nghỉ, cần giải sì trét chớ bro =)))",
+      "Có chi nặng lòng thì kể Tí nghe, Tí ở đây nè, lúc mô cũng có.",
+    ],
+    sign: "— Tí",
+  },
+  chan: {
+    open: "Ê ní =))",
+    body: [
+      "Mà chán thì có chi mô, ai mà chẳng có ngày chán. Chán học, chán làm, chán luôn cái điện thoại lướt hoài không thấy chi hay =))) Thôi đứng dậy đi, đi kiếm chi ngon ngon ăn, làm ly trà sữa, hay ra ngoài hít thở xíu cho dui lại nè.",
+      "Không thì mở bài nhạc Lít thích nhất, hát to lên, kệ ai nghe thì nghe 😏 Chán cỡ mô rồi cũng hết, còn chán quá thì nhắn Tí nè, Tí kể chuyện nhảm cho nghe, bảo đảm hết chán liền =)))",
+    ],
+    sign: "— Tí",
+  },
+};
+
+// ---- các thiệp/phong bì (chỉ khác vẻ ngoài) ----
+const LETTERS = [
+  { title: "Ngày đầu tiên", date: "03.09.2021", note: "Về lần đầu mình gặp nhau", addr: "Một góc quán quen", color: "#e3c9a2", seal: "#a88bc6", liner: "#f5e9cf", stamp: "sunflower" },
+  { title: "Mùa mưa", date: "18.06.2022", note: "Những buổi chiều trú mưa", addr: "Dưới mái hiên nhỏ", color: "#cfdbe3", seal: "#7d9cc4", liner: "#e9f0f4", stamp: "rain", airmail: true },
+  { title: "Bát phở 11 giờ đêm", date: "24.12.2022", note: "Món ăn của những đêm đói", addr: "Quán phở đầu ngõ", color: "#efcfc4", seal: "#c9837f", liner: "#fbebe5", stamp: "bowl" },
+  { title: "Chuyến đi xa", date: "30.04.2023", note: "Con đường ven biển", addr: "Con đường ven biển", color: "#d6dcc3", seal: "#8aa77c", liner: "#eef1e4", stamp: "sea", airmail: true },
+  { title: "Những điều chưa nói", date: "11.11.2023", note: "Viết ra cho nhẹ lòng", addr: "Một nơi bình yên", color: "#ddd2e3", seal: "#9a7cc0", liner: "#f3edf6", stamp: "heart" },
+  { title: "Lá thư cuối", date: "07.11.2026", note: "Mở khi nhớ", addr: "Mở khi nhớ", color: "#ecdcc0", seal: "#c49a5a", liner: "#f8f0e2", stamp: "moon" },
+];
+/* ========================================================= */
+
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, "0");
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const N = LETTERS.length;
+let uid = 0;
+
+let readSet = new Set();
+try { readSet = new Set(JSON.parse(localStorage.getItem("lit-read") || "[]")); } catch (e) {}
+const saveRead = () => { try { localStorage.setItem("lit-read", JSON.stringify([...readSet])); } catch (e) {} };
+
+/* ---------- SVG art ---------- */
+function rng(s) { return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function blobPath(r0, jit, n, R) {
+  const P = [];
+  for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, r = r0 + (R() - .5) * jit; P.push([50 + Math.cos(a) * r, 50 + Math.sin(a) * r]); }
+  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  let s = mid(P[n - 1], P[0]), d = `M${s[0].toFixed(1)},${s[1].toFixed(1)}`;
+  for (let k = 0; k < n; k++) { const p = P[k], m = mid(p, P[(k + 1) % n]); d += ` Q${p[0].toFixed(1)},${p[1].toFixed(1)} ${m[0].toFixed(1)},${m[1].toFixed(1)}`; }
+  return d + "Z";
+}
+// Con dấu sáp: chữ "Ny" nằm giữa một bông hướng dương dập nổi, có cánh hướng dương thật lấp ló bên dưới
+const SEAL_TEXT = "Ny";
+function sealSVG(color, i) {
+  const R = rng(i * 97 + 13), id = "sg" + (uid++);
+  const outer = blobPath(44, 9, 22, R);
+  // cánh hướng dương thật kẹp dưới sáp
+  let real = "";
+  const base = R() * 360;
+  for (let k = 0; k < 5; k++) real += `<path d="M50 50 C56 30 54 6 50 -6 C46 6 44 30 50 50Z" fill="${k % 2 ? "#f4bf2a" : "#e8a116"}" opacity=".95" transform="rotate(${(base + k * 26).toFixed(0)} 50 50)"/>`;
+  const leafA = (base + 160).toFixed(0);
+  // bông hướng dương dập nổi trên mặt sáp
+  let emb = "", hl = "";
+  for (let k = 0; k < 16; k++) {
+    const a = k * 22.5;
+    emb += `<path d="M50 50 C53 40 52.5 26 50 21 C47.5 26 47 40 50 50Z" transform="rotate(${a} 50 50)"/>`;
+    hl += `<path d="M49.4 24 C48.2 28 48.4 33 49 36" transform="rotate(${a} 50 50)"/>`;
+  }
+  let seeds = "";
+  for (let k = 0; k < 24; k++) { const r = Math.sqrt(k) * 2.4, a = k * 2.39996; seeds += `<circle cx="${(50 + Math.cos(a) * r).toFixed(1)}" cy="${(50 + Math.sin(a) * r).toFixed(1)}" r=".7"/>`; }
+  return `<svg viewBox="-20 -20 140 140"><defs><radialGradient id="${id}" cx="36%" cy="30%" r="80%"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".3" stop-color="#fff" stop-opacity=".08"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".38"/></radialGradient></defs>
+    <path d="M50 50 q30 6 56 40 q-36 -2 -56 -40z" fill="#7d9a5a" opacity=".9" transform="rotate(${leafA} 50 50)"/>${real}
+    <path d="${outer}" fill="${color}"/><path d="${outer}" fill="url(#${id})"/>
+    <circle cx="50" cy="50" r="33" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="2"/>
+    <g fill="rgba(0,0,0,.13)">${emb}</g>
+    <g fill="none" stroke="rgba(255,255,255,.28)" stroke-width="1.1" stroke-linecap="round">${hl}</g>
+    <circle cx="50" cy="50" r="19" fill="${color}"/><circle cx="50" cy="50" r="19" fill="url(#${id})" opacity=".5"/>
+    <circle cx="50" cy="50" r="19" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="1.4"/>
+    <g fill="rgba(0,0,0,.12)">${seeds}</g>
+    <text x="49.2" y="57.4" text-anchor="middle" font-family="Dancing Script,cursive" font-weight="700" font-size="22" fill="rgba(255,255,255,.35)">${SEAL_TEXT}</text>
+    <text x="50" y="58.2" text-anchor="middle" font-family="Dancing Script,cursive" font-weight="700" font-size="22" fill="rgba(0,0,0,.5)">${SEAL_TEXT}</text></svg>`;
+}
+// Cành hoa màu nước trên nắp phong bì (xen hoa hướng dương), đổi màu theo từng thiệp
+const FLORA = [
+  { bell: "#e392ac", berry: "#9b72c4", leaf: "#7f9e66", fern: "#86a8a0" },
+  { bell: "#8fb3dd", berry: "#6f8fc8", leaf: "#7f9e7a", fern: "#9ab4b8" },
+  { bell: "#e8a093", berry: "#c76f7e", leaf: "#8aa166", fern: "#a3b08a" },
+  { bell: "#b7cf8a", berry: "#7aa37a", leaf: "#6f965c", fern: "#8fb08e" },
+  { bell: "#c9a6e0", berry: "#8e6cc0", leaf: "#7f9e6e", fern: "#9aa9b8" },
+  { bell: "#e8b8c6", berry: "#a07a5a", leaf: "#85a06a", fern: "#a2b39a" },
+];
+function floraSVG(i) {
+  const P = FLORA[i % FLORA.length], R = rng(i * 31 + 7);
+  const sun = (x, y, s) => {
+    let p = "";
+    for (let k = 0; k < 13; k++) p += `<ellipse cx="0" cy="-6.4" rx="2.3" ry="5" fill="${k % 2 ? "#f7c53c" : "#eaa31d"}" transform="rotate(${(k * 27.7).toFixed(1)})"/>`;
+    return `<g transform="translate(${x} ${y}) scale(${s})">${p}<circle r="3.6" fill="#6e4219"/><circle cx="-1" cy="-1" r="1.2" fill="#9a6a33"/></g>`;
+  };
+  let bells = "";
+  for (let k = 0; k < 5; k++) { const y = 18 + k * 8.5, x = 68 + Math.sin(k) * 2 + (k % 2 ? 4 : -1);
+    bells += `<path d="M${x} ${y} q-3.6 1.2 -3.6 5.4 q1.8 -1 3.6 0.4 q1.8 -1.4 3.6 -0.4 q0 -4.2 -3.6 -5.4z" fill="${P.bell}"/>`; }
+  let berries = "";
+  for (let k = 0; k < 9; k++) { const t = k / 8, x = 56 - t * 32 + (R() - .5) * 6, y = 74 - t * 26 + (R() - .5) * 6;
+    berries += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(2.1 + R() * 1.1).toFixed(1)}" fill="${P.berry}"/>`; }
+  let fern = "";
+  for (let k = 0; k < 6; k++) { const t = (k + 1) / 7, x = 64 + t * 38, y = 76 - t * 34;
+    fern += `<ellipse cx="${(x - 3).toFixed(1)}" cy="${(y - 3).toFixed(1)}" rx="6" ry="2.4" fill="${P.fern}" transform="rotate(-62 ${x.toFixed(1)} ${y.toFixed(1)})"/><ellipse cx="${(x + 3).toFixed(1)}" cy="${(y + 1).toFixed(1)}" rx="6" ry="2.4" fill="${P.fern}" transform="rotate(8 ${x.toFixed(1)} ${y.toFixed(1)})"/>`; }
+  return `<svg viewBox="0 0 120 84" class="flora"><g filter="url(#wcf)" opacity=".9" stroke-linecap="round">
+    <path d="M58 80 Q44 62 24 48" stroke="${P.leaf}" stroke-width="1.3" fill="none"/>${berries}
+    <path d="M64 80 Q82 58 104 40" stroke="${P.fern}" stroke-width="1.3" fill="none"/>${fern}
+    <path d="M62 80 Q60 46 68 14" stroke="${P.leaf}" stroke-width="1.5" fill="none"/>${bells}
+    <path d="M60 64 q-10 -6 -12 -16 q10 4 12 16z" fill="${P.leaf}"/><path d="M63 56 q10 -5 13 -14 q-10 3 -13 14z" fill="${P.leaf}"/>
+    <path d="M60 80 Q52 58 44 38" stroke="${P.leaf}" stroke-width="1.4" fill="none"/>${sun(44, 34, 1.05)}
+    <path d="M66 80 Q74 70 84 62" stroke="${P.leaf}" stroke-width="1.2" fill="none"/>${sun(85, 60, 0.7)}
+  </g></svg>`;
+}
+function stampArt(kind) {
+  const W = (bg, inner) => `<svg viewBox="0 0 60 72"><rect width="60" height="72" fill="${bg}"/>${inner}<text x="5" y="11" font-size="7" font-family="Inter" font-weight="700" fill="rgba(255,255,255,.95)">500đ</text><text x="30" y="68" text-anchor="middle" font-size="4.6" letter-spacing=".8" font-family="Inter" font-weight="700" fill="rgba(255,255,255,.9)">VIỆT NAM</text></svg>`;
+  let pet = ""; for (let k = 0; k < 12; k++) pet += `<ellipse cy="-11" rx="3.4" ry="8" fill="${k % 2 ? "#f6b51e" : "#e8930f"}" transform="rotate(${k * 30})"/>`;
+  return {
+    sunflower: W("#8fb3c9", `<path d="M30 44 V72" stroke="#4f6b2a" stroke-width="2.5"/><path d="M30 56 q8 -6 14 -2 q-8 6 -14 2z" fill="#5f8030"/><g transform="translate(30 32)">${pet}<circle r="7.5" fill="#5a3418"/></g>`),
+    rain: W("#9fb6cc", `<g fill="#fff"><circle cx="24" cy="28" r="9"/><circle cx="35" cy="25" r="11"/><circle cx="43" cy="31" r="7"/><rect x="17" y="30" width="31" height="9" rx="4.5"/></g><g stroke="#3e6189" stroke-width="2" stroke-linecap="round"><path d="M22 45l-3 6M32 45l-3 6M42 45l-3 6M27 54l-3 6M37 54l-3 6"/></g>`),
+    bowl: W("#e39a85", `<path d="M14 38h32a16 16 0 0 1-32 0z" fill="#fff6ea"/><path d="M11 38h38" stroke="#7a3b2e" stroke-width="2"/><g stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"><path d="M24 31c-3-4 3-6 0-11M31 31c-3-4 3-6 0-11M38 31c-3-4 3-6 0-11"/></g><path d="M41 20l9 17" stroke="#7a3b2e" stroke-width="2"/>`),
+    sea: W("#a6c8db", `<circle cx="40" cy="25" r="8" fill="#ffd56b"/><path d="M0 44 Q15 38 30 44 T60 44 V72 H0z" fill="#4f86a6"/><path d="M0 52 Q15 46 30 52 T60 52 V72H0z" fill="#3a6d8c"/><path d="M0 60 Q15 55 30 60 T60 60 V72H0z" fill="#ead7ab"/>`),
+    heart: W("#bfa6d8", `<path d="M30 52 C10 38 14 22 24 22 c4 0 6 3 6 6 c0-3 2-6 6-6 c10 0 14 16-6 30z" fill="#b2404f"/><path d="M22 27 q-3 3 -2 7" stroke="#fff" stroke-width="1.6" fill="none" opacity=".7"/>`),
+    moon: W("#24345a", `<circle cx="32" cy="32" r="12" fill="#f6e3a1"/><circle cx="37" cy="28" r="11" fill="#24345a"/><g fill="#f6e3a1"><circle cx="14" cy="18" r="1.2"/><circle cx="46" cy="50" r="1.4"/><circle cx="18" cy="50" r="1"/><circle cx="50" cy="16" r="1"/><circle cx="44" cy="40" r=".8"/></g>`),
+  }[kind] || "";
+}
+function postmark(L) {
+  const id = "pm" + (uid++);
+  return `<svg class="postmark" viewBox="0 0 170 80"><defs><path id="${id}" d="M40,40 m-25,0 a25,25 0 1,1 50,0 a25,25 0 1,1 -50,0"/></defs>
+    <g fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="40" cy="40" r="35"/><circle cx="40" cy="40" r="18"/>
+    <path d="M80 24 q10 -6 20 0 t20 0 t20 0 t20 0 M80 40 q10 -6 20 0 t20 0 t20 0 t20 0 M80 56 q10 -6 20 0 t20 0 t20 0 t20 0"/></g>
+    <text font-size="8" letter-spacing="1.4" fill="currentColor" font-family="Inter" font-weight="600"><textPath href="#${id}">${PLACE} • ${L.date} •</textPath></text>
+    <text x="40" y="43" text-anchor="middle" font-size="8.5" font-weight="700" fill="currentColor" font-family="Inter">${L.date.slice(0, 5)}</text></svg>`;
+}
+function cardHTML(L, i) {
+  // phong bì kiểu màu nước: chỉ hiện mặt sau (nắp có cành hoa + con dấu sáp "Ny")
+  return `<div class="card" style="--c:${L.color};--s:${L.seal};--liner:${L.liner || "#f3ede1"}">
+    <div class="face back">
+      <div class="env">
+        <div class="inside"></div>
+        <div class="paper tex"><div class="pl">Gửi Lít,</div><i></i><i></i><i></i></div>
+        <div class="pk pk-s"><div class="pk-l tex"></div><div class="pk-r tex"></div></div>
+        <div class="pk pk-b"><div class="tex"></div></div>
+        <div class="b-no">${readSet.has(i) ? "đã đọc" : ""}</div>
+        <div class="flapw"><div class="flap tex">${floraSVG(i)}</div></div>
+        <div class="seal">${sealSVG(L.seal, i)}</div>
+      </div>
+      <div class="glare"></div>
+    </div>
+  </div>`;
+}
+function pressedFlower() {
+  let s = "";
+  for (let k = 0; k < 14; k++) s += `<ellipse cy="-20" rx="6" ry="15" fill="${k % 2 ? "#e9b44a" : "#d4952f"}" transform="rotate(${k * 25.7 + (k % 3) * 4})" opacity=".92"/>`;
+  return `<path d="M60 60 q-10 30 -40 56" stroke="#7d8a4a" stroke-width="3" fill="none"/><path d="M38 92 q-22 -4 -30 -20 q20 2 30 20z" fill="#8b9a55"/>
+    <g transform="translate(60 56) scale(.95)">${s}<circle r="12" fill="#6b4320"/></g>`;
+}
+$("#pressed").innerHTML = pressedFlower();
+
+/* ---------- build carousel ---------- */
+const stage = $("#stage"), dots = $("#dots");
+const slots = LETTERS.map((L, i) => {
+  const s = document.createElement("div");
+  s.className = "slot"; s.dataset.i = i;
+  s.innerHTML = `<div class="tilt">${cardHTML(L, i)}</div>`;
+  stage.appendChild(s);
+  const d = document.createElement("button");
+  d.setAttribute("aria-label", "Thư " + (i + 1));
+  d.onclick = () => goTo(i);
+  dots.appendChild(d);
+  return { el: s, tilt: s.firstElementChild };
+});
+$("#total").textContent = N; $("#tot2").textContent = pad(N);
+
+/* ---------- meta panel ---------- */
+const meta = $("#meta");
+const m = (txt, d) => `<span class="m" style="--d:${d}"><span>${txt}</span></span>`;
+function setMeta(i) {
+  const L = LETTERS[i];
+  const words = L.title.split(" ");
+  const half = Math.ceil(words.length / 2);
+  const lines = words.length > 2 ? [words.slice(0, half).join(" "), words.slice(half).join(" ")] : [L.title];
+  meta.classList.remove("in");
+  meta.innerHTML = `<h1>${lines.map((l, k) => m(l, k)).join("")}</h1>
+    <div class="row">${m("<b>Thư số</b>", 2)}${m(pad(i + 1), 2)}</div>
+    <div class="row">${m("<b>Ngày</b>", 3)}${m(L.date, 3)}</div>
+    <div class="row">${m("<b>Gửi</b>", 4)}${m("Lít", 4)}</div>
+    <div class="row">${m("<b>Trạng thái</b>", 5)}${m(readSet.has(i) ? "Đã đọc" : "Chưa mở", 5)}</div>
+    <div class="note">${m(L.note, 6)}</div>`;
+  void meta.offsetWidth;
+  meta.classList.add("in");
+  $("#cur").textContent = pad(i + 1);
+  [...dots.children].forEach((d, k) => d.classList.toggle("on", k === i));
+}
+
+/* ---------- motion loop ---------- */
+let p = -1.5, t = 0, active = -1;
+let mx = 0, my = 0, tmx = 0, tmy = 0, hx = 0, hy = 0;
+let introAt = Infinity;
+const easeOut = x => 1 - Math.pow(1 - x, 4);
+const spacing = () => slots[0].el.offsetWidth * 1.14;
+const holderEl = $("#holder"), bgMove = $("#bgMove");
+// vòng lặp: khoảng cách ngắn nhất giữa thư i và vị trí x (trong khoảng [-N/2, N/2))
+const wrapD = (i, x) => ((((i - x) % N) + N * 1.5) % N) - N / 2;
+const idxOf = x => ((Math.round(x) % N) + N) % N;
+const goTo = i => { const b = Math.round(t); t = b + Math.round(wrapD(i, b)); };
+let bgFocus = 0;
+let lx = 0, ly = 0;
+const letterTilt = document.getElementById("letterTilt");
+
+function frame(now) {
+  p += (t - p) * 0.08;
+  mx += (tmx - mx) * 0.07; my += (tmy - my) * 0.07;
+  bgFocus += ((focused && state !== "idle" ? 1 : 0) - bgFocus) * 0.05;
+  bgMove.style.transform = `scale(${1 + bgFocus * 0.06})`;
+  const SP = spacing();
+  slots.forEach((s, i) => {
+    const d = wrapD(i, p), ad = Math.abs(d);
+    const a = Math.max(0, 1 - ad);
+    const k = easeOut(clamp((now - introAt - i * 120) / 1500, 0, 1));
+    const x = d * SP;
+    const y = ad * 30 + (1 - k) * 760;
+    const z = -ad * 280 + a * 80;
+    const ry = -d * 16 + mx * 18 * a;
+    const rx = 50 - 34 * a - my * 12 * a + (1 - k) * 40;
+    const rz = -18 + 12 * a + (1 - k) * -30;
+    const bob = a * Math.sin(now / 700) * 7;
+    s.el.style.transform = `translate3d(${x}px,${y}px,${z}px) rotateY(${ry}deg)`;
+    s.tilt.style.transform = `translateY(${bob}px) rotateX(${rx}deg) rotateZ(${rz}deg)`;
+    s.el.style.opacity = clamp(1 - (ad - 1.9) * 1.1, 0, 1) * Math.min(1, k * 2);
+    s.el.style.setProperty("--gx", 50 + mx * 40 - d * 30 + "%");
+    s.el.style.setProperty("--gy", 30 + my * 30 + "%");
+    s.el.style.setProperty("--go", 0.35 + a * 0.45);
+  });
+  const ai = idxOf(p);
+  if (ai !== active) { active = ai; setMeta(ai); }
+  // tờ thư nghiêng 3D nhẹ theo chuột + ánh sáng lướt trên giấy
+  if (state === "read") {
+    lx += (tmx - lx) * 0.06; ly += (tmy - ly) * 0.06;
+    letterTilt.style.transform = `rotateX(${(-ly * 5).toFixed(2)}deg) rotateY(${(lx * 7).toFixed(2)}deg)`;
+    sheetWrap.style.setProperty("--lx", 50 + lx * 45 + "%");
+    sheetWrap.style.setProperty("--ly", 35 + ly * 40 + "%");
+  }
+  // interactive 3D tilt for the opened envelope
+  const tw = holderEl.firstElementChild;
+  if (tw) {
+    hx += (tmx - hx) * 0.08; hy += (tmy - hy) * 0.08;
+    const amt = state === "choose" ? 1 : 0.3;
+    tw.style.transform = `rotateX(${-hy * 14 * amt}deg) rotateY(${hx * 20 * amt}deg) translateY(${Math.sin(now / 800) * 5}px)`;
+    holderEl.style.setProperty("--gx", 50 + hx * 50 + "%");
+    holderEl.style.setProperty("--gy", 40 + hy * 40 + "%");
+    holderEl.style.setProperty("--go", 0.7);
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---------- input ---------- */
+let snapT, focused = true; // locked until loader finishes
+addEventListener("wheel", e => {
+  if (focused) return;
+  t += clamp((e.deltaY + e.deltaX) * 0.0022, -0.6, 0.6);
+  clearTimeout(snapT);
+  snapT = setTimeout(() => (t = Math.round(t)), 140);
+}, { passive: true });
+
+let down = null;
+stage.addEventListener("pointerdown", e => { if (!focused) down = { x: e.clientX, t, moved: false }; });
+addEventListener("pointermove", e => {
+  tmx = (e.clientX / innerWidth - 0.5) * 2; tmy = (e.clientY / innerHeight - 0.5) * 2;
+  movePill(e);
+  if (!down) return;
+  const dx = e.clientX - down.x;
+  if (Math.abs(dx) > 5) { down.moved = true; stage.classList.add("dragging"); }
+  if (down.moved) t = down.t - dx / spacing() * 1.3;
+});
+addEventListener("pointerup", e => {
+  if (!down) return;
+  const wasDrag = down.moved; down = null;
+  stage.classList.remove("dragging");
+  if (wasDrag) { t = Math.round(t); return; }
+  const s = e.target.closest && e.target.closest(".slot");
+  if (!s || focused) return;
+  const i = +s.dataset.i;
+  if (i === active) openLetter(i); else goTo(i);
+});
+addEventListener("keydown", e => {
+  if (e.key === "Escape") { if (state === "read" || state === "choose") closeAll(); return; }
+  if (focused) return;
+  if (e.key === "ArrowRight") t = Math.round(t) + 1;
+  if (e.key === "ArrowLeft") t = Math.round(t) - 1;
+  if (e.key === "Enter") openLetter(active);
+});
+
+/* ---------- cursor pill ---------- */
+const pill = $("#pill");
+const fine = matchMedia("(pointer:fine)").matches;
+function movePill(e) {
+  return; // đã bỏ nhãn chữ đi theo chuột
+  if (!fine) return;
+  pill.style.left = e.clientX + "px"; pill.style.top = e.clientY + 32 + "px";
+  if (focused) { pill.classList.remove("on"); return; }
+  const s = e.target.closest && e.target.closest(".slot");
+  if (s) { pill.textContent = +s.dataset.i === active ? "Mở thư" : "Xem"; pill.classList.add("on"); }
+  else if (e.target === stage) { pill.textContent = "Kéo"; pill.classList.add("on"); }
+  else pill.classList.remove("on");
+}
+
+/* ---------- petals ---------- */
+function petalBurst(x, y, n = 30) {
+  for (let i = 0; i < n; i++) {
+    const e = document.createElement("i");
+    e.className = "petal";
+    e.style.left = x + "px"; e.style.top = y + "px";
+    document.body.appendChild(e);
+    const a = Math.random() * Math.PI * 2, d = 120 + Math.random() * 280;
+    const dx = Math.cos(a) * d, dy = Math.sin(a) * d - 120, r = Math.random() * 720 - 360;
+    e.animate([
+      { transform: "translate(-50%,-50%) rotate(0) scale(.3)", opacity: 1 },
+      { transform: `translate(calc(-50% + ${dx * .7}px), calc(-50% + ${dy * .7}px)) rotate(${r * .5}deg) scale(1)`, opacity: 1, offset: .45 },
+      { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy + 300}px)) rotate(${r}deg) scale(.8)`, opacity: 0 },
+    ], { duration: 1800 + Math.random() * 1000, easing: "cubic-bezier(.2,.7,.3,1)" }).onfinish = () => e.remove();
+  }
+}
+
+/* ---------- open flow ---------- */
+const scene = $("#scene"), prompt = $("#prompt"), reader = $("#reader"), sheet = $("#sheet"), sheetWrap = $("#sheetWrap");
+let state = "idle", cur = 0, busy = false;
+/* ---------- nền ảnh + bụi nắng + mưa ---------- */
+const fx = $("#fx"), ctx = fx.getContext("2d");
+let W = 0, H = 0;
+function fxSize() {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  fx.width = W * dpr; fx.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+fxSize(); addEventListener("resize", fxSize);
+const fxNow = { rain: 0, pollen: 1 }, fxGoal = { rain: 0, pollen: 1 };
+const newMote = init => ({ x: Math.random() * W, y: init ? Math.random() * H : H + 30, r: 1 + Math.random() * 2.4,
+  big: Math.random() < 0.14, vy: 0.15 + Math.random() * 0.45, ph: Math.random() * 6.28, sp: 0.4 + Math.random() });
+const motes = []; // bụi nắng giờ do lớp 3D (cánh hoa + bokeh) đảm nhận
+const drops = Array.from({ length: W < 700 ? 120 : 220 }, () => ({ x: Math.random() * W * 1.2, y: Math.random() * H, l: 12 + Math.random() * 18, v: 10 + Math.random() * 8 }));
+function fxLoop(now) {
+  ctx.clearRect(0, 0, W, H);
+  fxNow.rain += (fxGoal.rain - fxNow.rain) * 0.03;
+  fxNow.pollen += (fxGoal.pollen - fxNow.pollen) * 0.03;
+  ctx.globalCompositeOperation = "lighter";
+  for (const m of motes) {
+    m.y -= m.vy; m.x += Math.sin(now / 1500 * m.sp + m.ph) * 0.35;
+    if (m.y < -40) Object.assign(m, newMote(false));
+    const tw = 0.55 + 0.45 * Math.sin(now / 600 * m.sp + m.ph);
+    const R = m.big ? m.r * 8 : m.r * 2.4;
+    const a = (m.big ? 0.16 : 0.7) * tw * fxNow.pollen;
+    const g = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, R);
+    g.addColorStop(0, `rgba(255,238,195,${a})`); g.addColorStop(1, "rgba(255,215,140,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(m.x, m.y, R, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = "source-over";
+  if (fxNow.rain > 0.01) {
+    ctx.strokeStyle = `rgba(225,233,245,${0.4 * fxNow.rain})`; ctx.lineWidth = 1; ctx.beginPath();
+    for (const d of drops) {
+      d.y += d.v; d.x -= d.v * 0.15;
+      if (d.y > H + 20) { d.y = -20; d.x = Math.random() * W * 1.2; }
+      ctx.moveTo(d.x, d.y); ctx.lineTo(d.x + d.l * 0.15, d.y - d.l);
+    }
+    ctx.stroke();
+  }
+  requestAnimationFrame(fxLoop);
+}
+requestAnimationFrame(fxLoop);
+
+/* ---------- nền pixel-art: trời, mây, núi tuyết, hồ, đồi cỏ, hướng dương ---------- */
+const skyCv = $("#sky"), sc = skyCv.getContext("2d");
+let LW = 0, LH = 0, PX = 1;            // độ phân giải thấp + kích thước 1 "pixel"
+let layers = {}, flowers = [], clouds = [], sparkles = [];
+let wind = 1, windGoal = 1;
+let bgImg = null;
+const bgVid = $("#bgVideo");
+let useVideo = !!BG_VIDEO;
+const bgPhoto = $("#bgPhoto");
+let useImage = !useVideo && !!BG_IMAGE;
+const R = rng(20211103);
+const rr = (a, b) => a + R() * (b - a);
+const ri = (a, b) => Math.floor(rr(a, b + 1));
+const lowc = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d"); g.imageSmoothingEnabled = false; return [c, g]; };
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const box = (g, x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), w, h); };
+function disc(g, cx, cy, r, c) {
+  g.fillStyle = c;
+  for (let y = -r; y <= r; y++) { const w = Math.round(Math.sqrt(Math.max(0, r * r - y * y))); g.fillRect(Math.round(cx - w), Math.round(cy + y), w * 2 + 1, 1); }
+}
+// dải màu có chấm dither kiểu pixel-art
+function dither(g, x0, y0, w, h, cols, test) {
+  const n = cols.length - 1;
+  for (let y = 0; y < h; y++) {
+    const tt = (y / Math.max(1, h - 1)) * n, i = Math.min(n - 1, Math.floor(tt)), f = tt - i;
+    for (let x = 0; x < w; x++) {
+      if (test && !test(x0 + x, y0 + y)) continue;
+      const th = (BAYER[(x & 3) + ((y & 3) << 2)] + 0.5) / 16;
+      g.fillStyle = f > th ? cols[i + 1] : cols[i];
+      g.fillRect(x0 + x, y0 + y, 1, 1);
+    }
+  }
+}
+const wave = (x, f, ph) => Math.sin(x * f + ph) * 0.6 + Math.sin(x * f * 2.7 + ph * 1.3) * 0.3 + Math.sin(x * f * 6.1 + ph * 2.1) * 0.1;
+
+function makeCloud(w) {
+  const h = Math.round(w * 0.62), [c, g] = lowc(w, h);
+  const puffs = [];
+  const base = h * 0.78;
+  for (let k = 0; k < 6; k++) puffs.push([w * (0.12 + k * 0.15), base - rr(2, 5), w * rr(0.08, 0.12)]);
+  for (let k = 0; k < 4; k++) puffs.push([w * (0.25 + k * 0.16), base - h * rr(0.32, 0.45), w * rr(0.11, 0.16)]);
+  puffs.push([w * rr(0.42, 0.6), base - h * 0.6, w * 0.15]);
+  for (const [x, y, r] of puffs) disc(g, x, y, Math.round(r), "#a9cdf0");
+  for (const [x, y, r] of puffs) disc(g, x - 1, y - 2, Math.max(1, Math.round(r) - 1), "#e3f1ff");
+  for (const [x, y, r] of puffs) disc(g, x - 2, y - 4, Math.max(1, Math.round(r) - 3), "#ffffff");
+  g.clearRect(0, Math.round(base) + 2, w, h);
+  return { c, w, h };
+}
+
+function buildScene() {
+  const SW = innerWidth, SH = innerHeight;
+  LH = SW < 700 ? 200 : 240;
+  PX = SH / LH;
+  LW = Math.ceil(SW / PX);
+  skyCv.width = LW; skyCv.height = LH;
+  sc.imageSmoothingEnabled = false;
+  const M = 8, W2 = LW + M * 2;
+  const HZ = Math.round(LH * 0.6);
+  R.reset && R.reset();
+
+  // trời
+  let [c, g] = lowc(W2, LH);
+  dither(g, 0, 0, W2, HZ + 6, ["#1a7fd9", "#2a90e4", "#3fa2ec", "#5cb5f2", "#86cbf6", "#b4e0fa"]);
+  layers.sky = c;
+
+  // núi tuyết
+  [c, g] = lowc(W2, LH);
+  const peak = W2 * 0.64, topY = LH * 0.24;
+  const far = x => HZ - (LH * 0.2) * Math.max(0, 1 - Math.abs(x - W2 * 0.22) / (W2 * 0.35)) - wave(x, 0.05, 1) * 2;
+  for (let x = 0; x < W2; x++) { const y = Math.round(far(x)); dither(g, x, y, 1, HZ - y + 2, ["#8db7ea", "#a9caf0"]); }
+  const mtn = x => {
+    const d = Math.abs(x - peak) / (W2 * 0.42);
+    return topY + (HZ - topY) * Math.min(1, Math.pow(d, 0.9)) + wave(x, 0.09, 3) * 2.2;
+  };
+  for (let x = 0; x < W2; x++) {
+    const y = Math.round(mtn(x));
+    if (y >= HZ) continue;
+    const left = x < peak;
+    dither(g, x, y, 1, HZ - y + 2, left ? ["#4f86da", "#5f95e0", "#86b2ea"] : ["#3a6cc6", "#4b7fd2", "#7aa6e4"]);
+    const snowLine = topY + LH * 0.075 + wave(x, 0.25, 7) * 3;
+    for (let yy = y; yy < Math.min(snowLine, HZ); yy++) box(g, x, yy, 1, 1, left ? "#f2f8ff" : ((x + yy) % 3 ? "#cfe0f6" : "#e3eefb"));
+  }
+  layers.mount = c;
+
+  // hồ + đồi + cây
+  [c, g] = lowc(W2, LH);
+  dither(g, 0, HZ, W2, Math.round(LH * 0.06), ["#2f7cd0", "#3f8fdc", "#5ea8ea"]);
+  for (let i = 0; i < W2 * 0.4; i++) box(g, ri(0, W2), HZ + ri(1, LH * 0.05), ri(2, 5), 1, "rgba(200,232,255,.55)");
+  const hillL = x => HZ + LH * 0.04 - (LH * 0.07) * Math.max(0, 1 - x / (W2 * 0.45)) + wave(x, 0.04, 2) * 2;
+  const hillR = x => HZ + LH * 0.05 - (LH * 0.12) * Math.max(0, (x - W2 * 0.45) / (W2 * 0.55)) + wave(x, 0.05, 5) * 2.5;
+  for (let x = 0; x < W2; x++) {
+    const y = Math.round(Math.min(hillL(x), hillR(x)));
+    dither(g, x, y, 1, LH - y, ["#a6dd5a", "#86cb47", "#66b23a", "#4f9a33"]);
+  }
+  // mảng cỏ đậm nhạt
+  for (let i = 0; i < W2 * 0.8; i++) {
+    const x = ri(0, W2), y0 = Math.min(hillL(x), hillR(x)), y = ri(y0 + 2, LH);
+    box(g, x, y, ri(1, 3), 1, R() < 0.5 ? "#5aa83a" : "#b8e86a");
+  }
+  // cây tròn kiểu pixel
+  const tree = (x, y, s) => {
+    box(g, x - 1, y - s, 2, s, "#5b4128");
+    const blobs = [[0, -s - s * 0.6, s * 0.8], [-s * 0.6, -s - s * 0.2, s * 0.6], [s * 0.6, -s - s * 0.25, s * 0.65], [0, -s - s * 1.2, s * 0.55]];
+    for (const [dx, dy, r] of blobs) disc(g, x + dx, y + dy, Math.round(r), "#2c6a2e");
+    for (const [dx, dy, r] of blobs) disc(g, x + dx - 1, y + dy - 1, Math.max(1, Math.round(r) - 1), "#3c8a38");
+    for (const [dx, dy, r] of blobs) disc(g, x + dx - 2, y + dy - 2, Math.max(1, Math.round(r * 0.45)), "#5fb04a");
+  };
+  const nT = Math.round(W2 / 28);
+  for (let i = 0; i < nT; i++) {
+    const x = Math.round(W2 * (0.55 + R() * 0.45)), y = Math.round(hillR(x)) + ri(1, 6);
+    tree(x, y, ri(4, 8));
+  }
+  for (let i = 0; i < 3; i++) { const x = Math.round(W2 * rr(0.05, 0.25)); tree(x, Math.round(hillL(x)) + 3, ri(3, 5)); }
+  // đường đất hồng + cỏ tiền cảnh
+  const pathY = Math.round(LH * 0.93);
+  dither(g, 0, pathY, W2, LH - pathY, ["#f0c3c0", "#e9aeb2", "#dc9aa4"]);
+  for (let i = 0; i < W2 * 0.5; i++) box(g, ri(0, W2), ri(pathY, LH), 1, 1, R() < 0.5 ? "#fbe2dc" : "#c98a96");
+  for (let x = 0; x < W2; x++) { const hgt = ri(1, 4); box(g, x, pathY - hgt, 1, hgt, x % 2 ? "#5aa83a" : "#7cc544"); }
+  for (let i = 0; i < W2 * 0.25; i++) box(g, ri(0, W2), pathY - ri(1, 3), 1, 1, ["#ffffff", "#ffd1dc", "#fff2a0"][ri(0, 2)]);
+  layers.hills = c;
+  layers.M = M; layers.HZ = HZ; layers.pathY = pathY;
+
+  // hướng dương (vẽ động)
+  flowers = [];
+  const add = (x, base, size, h) => flowers.push({ x, base, size, h, ph: rr(0, 6.28), wig: 0, last: 0 });
+  // hoa lớn hai bên
+  add(W2 * 0.07, pathY + 2, 4, LH * 0.5);
+  add(W2 * 0.13, pathY + 3, 3, LH * 0.38);
+  add(W2 * 0.19, pathY + 1, 2, LH * 0.26);
+  add(W2 * 0.93, pathY + 2, 4, LH * 0.52);
+  add(W2 * 0.87, pathY + 3, 3, LH * 0.36);
+  add(W2 * 0.81, pathY + 2, 2, LH * 0.25);
+  // thêm hoa cao rải rác
+  for (let i = 0; i < Math.round(W2 / 22); i++) {
+    const x = rr(0.02, 0.98) * W2, center = Math.abs(x / W2 - 0.5) < 0.22;
+    add(x, LH * rr(0.95, 1.02), center ? 2 : ri(2, 3), LH * (center ? rr(0.12, 0.2) : rr(0.22, 0.4)));
+  }
+  // cánh đồng nhỏ
+  const nF = Math.round(W2 * (useVideo ? 1.1 : 0.55));
+  for (let i = 0; i < nF; i++) {
+    const x = rr(0, W2), top = useVideo ? LH * 0.78 : Math.min(hillL(x), hillR(x)) + 6;
+    const bot = useVideo ? LH * 1.01 : pathY;
+    const base = top + (bot - top) * Math.pow(R(), 0.8);
+    const k = (base - top) / (bot - top);
+    add(x, base, k > 0.75 ? 2 : 1, 7 + k * 18 + rr(0, 4));
+  }
+  flowers.sort((a, b) => a.base - b.base);
+  if (useVideo || useImage) flowers = []; // dùng video thì giữ nguyên video, không vẽ hoa đè lên
+
+  if (!clouds.length) {
+    for (let i = 0; i < 5; i++) clouds.push({ ...makeCloud(ri(50, 110)), x: rr(-40, LW), y: rr(0.02, 0.26), v: rr(1.5, 4), d: rr(0.1, 0.3) });
+  }
+  sparkles = Array.from({ length: Math.round(W2 / 10) }, () => ({ x: ri(0, W2), y: HZ + ri(1, LH * 0.05), ph: rr(0, 6.28) }));
+}
+
+function drawFlower(g, f, t, ox) {
+  const s = f.size;
+  const sway = Math.round(Math.sin(t * 1.3 + f.ph) * (0.6 + s * 0.4) * wind + Math.sin(t * 22) * f.wig);
+  const x = Math.round(f.x + ox), base = Math.round(f.base), top = Math.round(base - f.h);
+  const sw = s >= 3 ? 2 : 1;
+  // thân cong theo gió
+  for (let y = top; y < base; y++) {
+    const k = (base - y) / (base - top);
+    box(g, x + Math.round(sway * k * k), y, sw, 1, "#3f8a2c");
+  }
+  if (s >= 2) {
+    const leaf = (k, dir) => {
+      const y = Math.round(base - (base - top) * k), lx = x + Math.round(sway * k * k);
+      for (let i = 0; i < s + 2; i++) box(g, lx + dir * (i + 1), y - Math.round(i * 0.5), 1, Math.max(1, s - Math.abs(i - s / 2)), i % 2 ? "#4fa83a" : "#3d8f2e");
+    };
+    leaf(0.3, 1); leaf(0.5, -1); if (s >= 3) { leaf(0.68, 1); leaf(0.82, -1); }
+  }
+  // bông hoa
+  const hx = x + sway, hy = top;
+  const r = s === 1 ? 1 : s + 1;
+  if (s === 1) {
+    box(g, hx - 1, hy - 1, 3, 3, "#ffc21a"); box(g, hx, hy, 1, 1, "#6b3a12");
+  } else {
+    disc(g, hx, hy, r + 2, "#e88a0c");
+    disc(g, hx, hy, r + 1, "#ffc21a");
+    for (let a = 0; a < 8; a++) box(g, hx + Math.round(Math.cos(a * 0.785) * (r + 2)), hy + Math.round(Math.sin(a * 0.785) * (r + 2)), 1, 1, "#ffe36a");
+    disc(g, hx, hy, Math.max(1, r - 1), "#5a2f10");
+    box(g, hx - 1, hy - 1, 1, 1, "#9a5a20");
+    if (s >= 3) { box(g, hx + 1, hy, 1, 1, "#7a4418"); box(g, hx, hy + 1, 1, 1, "#7a4418"); }
+  }
+  f.hx = hx; f.hy = hy; f.hr = r + 3; f.top = top;
+  f.wig *= 0.93;
+}
+
+let sceneT0 = performance.now(), sceneReady = false;
+function drawScene(now) {
+  const t = (now - sceneT0) / 1000;
+  wind += (windGoal - wind) * 0.02;
+  const M = layers.M;
+  const o = d => Math.round(-M - mx * M * d);
+  const oy = d => Math.round(-my * 3 * d);
+  sc.clearRect(0, 0, LW, LH);
+  if (useVideo || useImage) {
+    (useVideo ? bgVid : bgPhoto).style.translate = `${Math.round(-mx * 14)}px ${Math.round(-my * 8)}px`;
+  } else {
+    sc.drawImage(layers.sky, o(0.1), 0);
+    for (const cl of clouds) {
+      cl.x += cl.v / 60;
+      if (cl.x > LW + 10) cl.x = -cl.w - 10;
+      sc.drawImage(cl.c, Math.round(cl.x + o(cl.d) + M), Math.round(cl.y * LH + oy(cl.d)));
+    }
+    sc.drawImage(layers.mount, o(0.3), oy(0.3));
+    sc.drawImage(layers.hills, o(0.6), oy(0.6));
+    for (const s of sparkles) if (Math.sin(t * 2 + s.ph) > 0.85) box(sc, s.x + o(0.6), s.y + oy(0.6), 1, 1, "#ffffff");
+  }
+  const fo = o(0.8), fy = oy(0.8);
+  sc.save(); sc.translate(0, fy);
+  for (const f of flowers) drawFlower(sc, f, t, fo);
+  sc.restore();
+  if (!sceneReady) { sceneReady = true; window.__fieldReady = true; dispatchEvent(new Event("field-ready")); }
+  requestAnimationFrame(drawScene);
+}
+
+// lướt chuột qua hoa → hoa rung + tiếng xào xạc
+addEventListener("pointermove", e => {
+  if (!flowers.length || document.body.classList.contains("focus")) return;
+  const lx = e.clientX / PX, ly = e.clientY / PX;
+  const speed = Math.hypot(e.movementX || 0, e.movementY || 0);
+  if (speed < 1.5) return;
+  const now = performance.now();
+  let hits = 0;
+  for (const f of flowers) {
+    if (f.hx == null) continue;
+    if (Math.abs(lx - f.hx) <= f.hr && ly >= f.hy - f.hr && ly <= f.base) {
+      f.wig = Math.min(2.5, 0.8 + f.size * 0.5);
+      if (now - f.last > 260) { f.last = now; hits += f.size; }
+    }
+  }
+  if (hits) Sound.rustle(Math.min(1.4, 0.35 + hits * 0.18 + speed * 0.01), (e.clientX / innerWidth) * 2 - 1);
+});
+
+let resizeT;
+addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(buildScene, 150); });
+function startScene() { buildScene(); requestAnimationFrame(drawScene); }
+if (useVideo) {
+  bgVid.src = BG_VIDEO; bgVid.hidden = false;
+  bgVid.play().catch(() => {});
+  bgVid.onerror = () => { useVideo = false; bgVid.hidden = true; buildScene(); }; // không có file → quay về cảnh pixel
+  startScene();
+} else if (useImage) {
+  bgPhoto.onerror = () => {
+    if (BG_IMAGE_FALLBACK && !bgPhoto.src.endsWith(BG_IMAGE_FALLBACK)) { bgPhoto.src = BG_IMAGE_FALLBACK; return; }
+    useImage = false; bgPhoto.hidden = true; buildScene(); // không có ảnh → quay về cảnh pixel
+  };
+  bgPhoto.src = BG_IMAGE; bgPhoto.hidden = false;
+  startScene();
+} else startScene();
+
+/* ---------- âm thanh: nhạc nền tự soạn + tiếng lá xào xạc (Web Audio) ---------- */
+const Sound = (() => {
+  let ac, master, music, sfx, noise, started = false, muted = false, timer;
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  function init() {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    master = ac.createGain(); master.gain.value = 0; master.connect(ac.destination);
+    music = ac.createGain(); music.gain.value = MUSIC_VOLUME;
+    sfx = ac.createGain(); sfx.gain.value = RUSTLE_VOLUME; sfx.connect(master);
+    const len = ac.sampleRate * 3, ir = ac.createBuffer(2, len, ac.sampleRate);
+    for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4); }
+    const rev = ac.createConvolver(); rev.buffer = ir;
+    const revG = ac.createGain(); revG.gain.value = 0.5;
+    music.connect(master); music.connect(rev); rev.connect(revG); revG.connect(master);
+    noise = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
+    const nd = noise.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  }
+  // Fmaj7 – Dm7 – Bbmaj7 – C6, 68 bpm, kiểu lofi êm
+  const CHORDS = [[53, 57, 60, 64], [50, 53, 57, 60], [46, 50, 53, 57], [48, 52, 55, 57]];
+  const SCALE = [65, 67, 69, 72, 74, 77, 79, 81];
+  const BEAT = 60 / 68;
+  let nextBar = 0, bar = 0, mel = 3;
+  function pad(time, notes, dur) {
+    notes.forEach((n, i) => {
+      const o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+      o.type = i % 2 ? "sine" : "triangle"; o.frequency.value = mtof(n); o.detune.value = (Math.random() - 0.5) * 10;
+      f.type = "lowpass"; f.frequency.value = 1100;
+      g.gain.setValueAtTime(0, time);
+      g.gain.linearRampToValueAtTime(0.045, time + 1.4);
+      g.gain.setValueAtTime(0.045, time + dur - 0.6);
+      g.gain.linearRampToValueAtTime(0, time + dur + 1.2);
+      o.connect(f); f.connect(g); g.connect(music);
+      o.start(time); o.stop(time + dur + 1.3);
+    });
+  }
+  function bass(time, n, dur) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o.frequency.value = mtof(n - 12);
+    g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(0.09, time + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.001, time + dur);
+    o.connect(g); g.connect(music); o.start(time); o.stop(time + dur + 0.1);
+  }
+  function bell(time, n, v) {
+    const o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), g2 = ac.createGain();
+    o.type = "sine"; o.frequency.value = mtof(n);
+    o2.type = "sine"; o2.frequency.value = mtof(n) * 3.01; g2.gain.value = 0.12;
+    g.gain.setValueAtTime(0, time); g.gain.linearRampToValueAtTime(v, time + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0005, time + 2.2);
+    o.connect(g); o2.connect(g2); g2.connect(g); g.connect(music);
+    o.start(time); o2.start(time); o.stop(time + 2.3); o2.stop(time + 2.3);
+  }
+  function scheduleBar(time) {
+    const ch = CHORDS[bar % 4], dur = BEAT * 4;
+    pad(time, ch, dur); bass(time, ch[0], dur * 0.9);
+    for (let s = 0; s < 8; s++) {
+      if (Math.random() < (s % 2 ? 0.25 : 0.5)) {
+        mel = Math.max(0, Math.min(SCALE.length - 1, mel + [-2, -1, 1, 2, 0][Math.floor(Math.random() * 5)]));
+        bell(time + s * BEAT / 2 + Math.random() * 0.02, SCALE[mel], 0.045 + Math.random() * 0.035);
+      }
+    }
+    bar++;
+  }
+  function loop() { while (nextBar < ac.currentTime + 1.5) { scheduleBar(nextBar); nextBar += BEAT * 4; } }
+  return {
+    start() {
+      if (!ac) init();
+      ac.resume();
+      if (started) return;
+      started = true; nextBar = ac.currentTime + 0.3; loop(); timer = setInterval(loop, 400);
+      master.gain.setValueAtTime(0, ac.currentTime);
+      master.gain.linearRampToValueAtTime(muted ? 0 : 0.85, ac.currentTime + 3);
+    },
+    rustle(amount = 1, pan = 0) {
+      if (!started || muted) return;
+      // tiếng lá dịu: ít nhịp hơn, tần số thấp & mềm hơn, vào/ra từ từ (không gắt)
+      const t0 = ac.currentTime, n = 2 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < n; i++) {
+        const t = t0 + i * 0.06 + Math.random() * 0.05;
+        const src = ac.createBufferSource(); src.buffer = noise;
+        const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1300 + Math.random() * 1500; bp.Q.value = 0.6;
+        const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3200;
+        const g = ac.createGain(), v = (0.05 + Math.random() * 0.05) * Math.min(amount, 1);
+        const dur = 0.16 + Math.random() * 0.12;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + 0.035);
+        g.gain.exponentialRampToValueAtTime(0.0003, t + dur);
+        src.connect(bp); bp.connect(lp); lp.connect(g);
+        if (ac.createStereoPanner) { const p = ac.createStereoPanner(); p.pan.value = pan * 0.8; g.connect(p); p.connect(sfx); } else g.connect(sfx);
+        src.start(t, Math.random() * 0.6, dur + 0.05);
+      }
+    },
+    toggle() {
+      muted = !muted;
+      if (ac) { master.gain.cancelScheduledValues(ac.currentTime); master.gain.linearRampToValueAtTime(muted ? 0 : 0.85, ac.currentTime + 0.5); }
+      return muted;
+    },
+  };
+})();
+const soundBtn = $("#soundBtn");
+soundBtn.onclick = () => { const m = Sound.toggle(); soundBtn.classList.toggle("off", m); soundBtn.querySelector("span").textContent = m ? "Nhạc: tắt" : "Nhạc: bật"; };
+
+/* ---------- con trỏ hoa hướng dương (con trỏ thật của hệ thống → nhạy như chuột thường) ---------- */
+function cursorSVG(hover) {
+  let s = "";
+  for (let k = 0; k < 12; k++) s += `<path d="M0-5C3.2-8 2.8-12.6 0-14.6C-2.8-12.6-3.2-8 0-5Z" fill="#e8820a" transform="rotate(${k * 30 + 15})"/>`;
+  for (let k = 0; k < 12; k++) s += `<path d="M0-5C2.9-7.6 2.5-11.6 0-13.4C-2.5-11.6-2.9-7.6 0-5Z" fill="${hover ? "#ffd23a" : "#ffc21f"}" stroke="#d07400" stroke-width=".35" transform="rotate(${k * 30})"/><path d="M0-7.5L0-11.6" stroke="#fff3a6" stroke-width=".6" stroke-linecap="round" transform="rotate(${k * 30})"/>`;
+  let seeds = "";
+  for (let i = 0; i < 22; i++) { const r = Math.sqrt(i) * 1.05, a = i * 2.39996; seeds += `<circle cx="${(Math.cos(a) * r).toFixed(2)}" cy="${(Math.sin(a) * r).toFixed(2)}" r=".45" fill="${i % 2 ? "#2a1405" : "#a0662a"}"/>`; }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><radialGradient id="c" cx="38%" cy="34%" r="70%"><stop offset="0" stop-color="#9c6329"/><stop offset="1" stop-color="#3a1c07"/></radialGradient></defs><g transform="translate(16 16)${hover ? " rotate(18) scale(1.06)" : ""}">${s}<circle r="5.6" fill="url(#c)" stroke="#2a1405" stroke-width=".6"/>${seeds}<path d="M-3.4-2.2A4 4 0 0 1-1-3.9" stroke="#ffd9a0" stroke-width=".7" fill="none" stroke-linecap="round"/></g></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 16 16, auto`;
+}
+document.documentElement.style.setProperty("--cur", cursorSVG(false));
+document.documentElement.style.setProperty("--cur-hover", cursorSVG(true));
+
+let committedMood = null;
+function applyMood(m) {
+  if (m) document.body.dataset.mood = m; else delete document.body.dataset.mood;
+  fxGoal.rain = m === "buon" ? 1 : 0;
+  fxGoal.pollen = m === "buon" ? 0.2 : m === "vui" ? 1.4 : 1;
+  if (window.Petals) Petals.setMood(m);
+  windGoal = m === "buon" ? 1.8 : m === "vui" ? 1.2 : m === "chan" ? 0.4 : 1;
+  raysGoal = m === "buon" ? 0 : m === "vui" ? 1.5 : 1;
+}
+const Field = {
+  setMood(m) { committedMood = m || null; applyMood(committedMood); },
+  preview(m) { applyMood(m || committedMood); },
+  focus() {},
+  intro() { document.body.classList.add("ready"); },
+};
+const F = () => Field;
+
+const moodsEl = $("#moods");
+moodsEl.innerHTML = Object.entries(MOODS).map(([k, v]) =>
+  `<button class="mood" data-m="${k}" style="--mc:${v.color}">${v.label}<small>${v.hint}</small></button>`).join("");
+moodsEl.addEventListener("click", e => { const b = e.target.closest(".mood"); if (b) pickMood(b.dataset.m); });
+moodsEl.querySelectorAll(".mood").forEach(b => {
+  b.addEventListener("pointerenter", () => { if (state === "choose") F().preview(b.dataset.m); });
+  b.addEventListener("pointermove", e => { // magnetic
+    const r = b.getBoundingClientRect();
+    b.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .25}px,${(e.clientY - r.top - r.height / 2) * .35}px)`;
+  });
+  b.addEventListener("pointerleave", () => { b.style.transform = ""; if (state === "choose") F().preview(null); });
+});
+$("#back").onclick = () => closeAll();
+
+async function openLetter(i) {
+  if (busy) return; busy = true;
+  cur = i; state = "choose"; focused = true;
+  pill.classList.remove("on");
+  document.body.classList.add("focus");
+  F().focus(true);
+  holderEl.className = "holder pre";
+  holderEl.innerHTML = `<div class="tiltw">${cardHTML(LETTERS[i], i)}</div>`;
+  scene.classList.add("on");
+  await sleep(60);
+  holderEl.classList.remove("pre");
+  await sleep(500);
+  prompt.classList.remove("hide"); prompt.classList.add("show");
+  busy = false;
+}
+
+async function pickMood(mood) {
+  if (busy || state !== "choose") return; busy = true;
+  state = "opening";
+  F().setMood(mood);
+  const card = holderEl.querySelector(".card"), env = holderEl.querySelector(".env");
+  prompt.classList.add("hide"); prompt.classList.remove("show");
+  holderEl.classList.add("center");
+  await sleep(450);
+  await sleep(300); // phong bì đã ở mặt sau, không cần lật
+  const sr = env.querySelector(".seal").getBoundingClientRect();
+  env.classList.add("broke");
+  petalBurst(sr.left + sr.width / 2, sr.top + sr.height / 2);
+  if (window.Petals) Petals.burst();
+  await sleep(380);
+  env.classList.add("open");
+  await sleep(440);
+  env.classList.add("flapback");
+  await sleep(140);
+  env.classList.add("out");
+  await sleep(850);
+  fillSheet(mood);
+  holderEl.classList.add("gone");
+  reader.classList.remove("bye");
+  reader.classList.add("on");
+  state = "read";
+  readSet.add(cur); saveRead();
+  slots[cur].el.querySelector(".b-no").textContent = "đã đọc";
+  busy = false;
+}
+
+function fillSheet(mood) {
+  const L = LETTERS[cur], M = (L.moods && L.moods[mood]) || MOOD_LETTERS[mood], MD = MOODS[mood];
+  sheetWrap.style.setProperty("--mc", MD.color);
+  $("#floraCorner").innerHTML = floraSVG(cur);
+  $("#letterSeal").innerHTML = sealSVG(L.seal, cur);
+  const parts = [
+    `<p class="greet ln">${M.open || "Gửi Lít,"}</p>`,
+    ...M.body.map(b => `<p class="body ln">${b}</p>`),
+    `<p class="sign ln">${M.sign || ""}</p>`,
+    `<div class="sh-actions ln"><button data-act="again">↺ Chọn cảm xúc khác</button><button data-act="close">Cất thư lại</button></div>`,
+  ];
+  sheet.innerHTML = parts.join("");
+  sheet.scrollTop = 0;
+  [...sheet.querySelectorAll(".ln")].forEach((el, k) => (el.style.transitionDelay = 650 + k * 120 + "ms"));
+}
+sheet.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.act === "again") backToMoods(); else closeAll();
+});
+
+async function hideReader() {
+  if (!reader.classList.contains("on")) return;
+  reader.classList.add("bye");
+  await sleep(520);
+  reader.classList.remove("on", "bye");
+}
+
+async function backToMoods() {
+  if (busy) return; busy = true;
+  await hideReader();
+  const card = holderEl.querySelector(".card"), env = holderEl.querySelector(".env");
+  holderEl.classList.remove("gone");
+  env.classList.remove("out");
+  await sleep(550);
+  env.classList.remove("flapback", "open");
+  await sleep(600);
+  env.classList.remove("broke");
+  await sleep(300);
+  card.classList.remove("flip");
+  holderEl.classList.remove("center");
+  await sleep(700);
+  prompt.classList.remove("hide"); prompt.classList.add("show");
+  state = "choose"; busy = false;
+}
+
+async function closeAll() {
+  if (busy) return; busy = true;
+  await hideReader();
+  prompt.classList.add("hide"); prompt.classList.remove("show");
+  holderEl.classList.add("gone");
+  F().focus(false);
+  if (state === "choose") F().preview(null);
+  await sleep(450);
+  document.body.classList.remove("focus");
+  scene.classList.remove("on");
+  holderEl.innerHTML = "";
+  state = "idle"; focused = false;
+  active = -1; // refresh meta
+  busy = false;
+}
+
+/* ---------- loader ---------- */
+(async function boot() {
+  const title = "Gửi Lít";
+  $("#ldTitle").innerHTML = [...title].map((c, i) => `<span style="--i:${i}">${c}</span>`).join("");
+  const count = $("#ldCount"), bar = $("#ldBar");
+  const ready = Promise.all([
+    document.fonts ? document.fonts.ready : Promise.resolve(),
+    new Promise(r => { if (window.__fieldReady) r(); else { addEventListener("field-ready", r, { once: true }); setTimeout(r, 6000); } }),
+  ]);
+  let v = 0, done = false;
+  ready.then(() => (done = true));
+  const start = performance.now();
+  await new Promise(res => {
+    (function tick() {
+      const el = performance.now() - start;
+      const cap = done ? 100 : 90;
+      v += (Math.min(cap, el / 16) - v) * 0.12;
+      if (done && el > 1600) v += (100 - v) * 0.2;
+      count.textContent = Math.round(v);
+      bar.style.width = v + "%";
+      if (v > 99.5) { count.textContent = "100"; return res(); }
+      requestAnimationFrame(tick);
+    })();
+  });
+  // trình duyệt chỉ cho phát nhạc sau khi người xem bấm → đợi bấm "Mở hộp thư"
+  const enter = $("#enterBtn");
+  enter.classList.add("show"); $("#enterNote").classList.add("show");
+  await new Promise(r => enter.addEventListener("click", r, { once: true }));
+  Sound.start();
+  $("#loader").classList.add("done");
+  F().intro();
+  await sleep(500);
+  document.body.classList.remove("loading");
+  introAt = performance.now();
+  await sleep(1200);
+  focused = false;
+})();
+</script>
+<script type="module">
+/* ===== Lớp 3D: cánh hoa hướng dương bay lượn + bokeh bụi nắng (Three.js) =====
+   Lướt chuột qua → cuốn cánh hoa bay + tiếng xào xạc. API: window.Petals.setMood(m), .burst() */
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+
+const cv = document.getElementById("petals");
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }); }
+catch (e) { cv.remove(); throw e; }
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+renderer.setClearColor(0x000000, 0);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+cam.position.set(0, 0, 6);
+scene.add(new THREE.HemisphereLight(0xd6ecff, 0x8ab54e, 1.6));
+const sun = new THREE.DirectionalLight(0xfff0c4, 2.4);
+sun.position.set(-3, 5, 4); scene.add(sun);
+
+/* cánh hoa */
+function petalTex() {
+  const c = document.createElement("canvas"); c.width = 64; c.height = 160;
+  const g = c.getContext("2d");
+  const gr = g.createLinearGradient(0, 160, 0, 0);
+  gr.addColorStop(0, "#e07a00"); gr.addColorStop(0.35, "#ffb612"); gr.addColorStop(1, "#ffe66e");
+  g.fillStyle = gr;
+  g.beginPath(); g.moveTo(32, 158);
+  g.bezierCurveTo(3, 118, 2, 40, 32, 2); g.bezierCurveTo(62, 40, 61, 118, 32, 158); g.fill();
+  g.strokeStyle = "rgba(190,100,0,.45)"; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(32, 150); g.lineTo(32, 22); g.stroke();
+  g.strokeStyle = "rgba(255,255,220,.55)"; g.lineWidth = 1.5;
+  g.beginPath(); g.moveTo(23, 130); g.quadraticCurveTo(19, 80, 28, 30); g.stroke();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
+}
+const geo = new THREE.PlaneGeometry(0.16, 0.4, 2, 6);
+{ const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i); p.setZ(i, (y / 0.2) ** 2 * 0.05 + Math.abs(x) * 0.3); }
+  geo.computeVertexNormals(); }
+const ptex = petalTex();
+// emissive = cánh hoa hơi tự sáng như được nắng xuyên qua, không bị tối như lá khô
+const mat = new THREE.MeshLambertMaterial({ map: ptex, emissive: 0xffffff, emissiveMap: ptex, emissiveIntensity: 0.55, side: THREE.DoubleSide, alphaTest: 0.4 });
+const N = innerWidth < 700 ? 150 : 300;
+const mesh = new THREE.InstancedMesh(geo, mat, N);
+mesh.frustumCulled = false;
+scene.add(mesh);
+
+const B = { x: 11, y0: -6, y1: 7, z0: -16, z1: 3.6 };
+const lerp = THREE.MathUtils.lerp;
+const P = [];
+function spawn(o, init) {
+  o.pos.set(init ? lerp(-B.x, B.x, Math.random()) : B.x + Math.random() * 2,
+            lerp(B.y0, B.y1, Math.random()), lerp(B.z0, B.z1, Math.random()));
+  o.vel.set(-0.5, 0, 0);
+}
+for (let i = 0; i < N; i++) {
+  const o = { pos: new THREE.Vector3(), vel: new THREE.Vector3(), q: new THREE.Quaternion().random(),
+    axis: new THREE.Vector3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize(),
+    spin: 0.6 + Math.random() * 1.6, boost: 0, s: 0.75 + Math.random() * 0.7, ph: Math.random() * 6.28 };
+  spawn(o, true); P.push(o);
+  const tint = new THREE.Color().setHSL(0.11 + Math.random() * 0.03, 1, 0.5 + Math.random() * 0.12);
+  mesh.setColorAt(i, tint);
+}
+
+/* bokeh bụi nắng */
+const NB = innerWidth < 700 ? 90 : 180;
+const bg = new THREE.BufferGeometry();
+const bp = new Float32Array(NB * 3), bs = new Float32Array(NB);
+for (let i = 0; i < NB; i++) { bp[i * 3] = lerp(-12, 12, Math.random()); bp[i * 3 + 1] = lerp(-7, 8, Math.random()); bp[i * 3 + 2] = lerp(-14, 4.5, Math.random()); bs[i] = Math.random(); }
+bg.setAttribute("position", new THREE.BufferAttribute(bp, 3));
+bg.setAttribute("aS", new THREE.BufferAttribute(bs, 1));
+const U = { uT: { value: 0 }, uPix: { value: renderer.getPixelRatio() }, uAmt: { value: 1 } };
+const bokeh = new THREE.Points(bg, new THREE.ShaderMaterial({
+  uniforms: U, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  vertexShader: `attribute float aS; uniform float uT,uPix; varying float vA,vNear;
+    void main(){ vec3 p=position; p.y=mod(p.y+uT*(.08+aS*.12)+7.,15.)-7.; p.x+=sin(uT*.3+aS*20.)*.5;
+      vec4 mv=modelViewMatrix*vec4(p,1.); float z=-mv.z;
+      vNear=smoothstep(4.,1.2,z);
+      gl_PointSize=(6.+aS*10.+vNear*60.)*uPix*(4./z);
+      gl_Position=projectionMatrix*mv; vA=(.25+.5*aS)*(.6+.4*sin(uT*1.5+aS*40.)); }`,
+  fragmentShader: `uniform float uAmt; varying float vA,vNear;
+    void main(){ float d=length(gl_PointCoord-.5); float core=smoothstep(.5,.0,d); float ring=smoothstep(.5,.42,d)*smoothstep(.3,.45,d);
+      float a=mix(core,core*.35+ring*.5,vNear)*vA*mix(1.,.45,vNear)*uAmt;
+      gl_FragColor=vec4(1.,.93,.72,a); }`,
+}));
+bokeh.frustumCulled = false;
+scene.add(bokeh);
+
+/* chuột */
+const ndc = new THREE.Vector2(9, 9), ray = new THREE.Raycaster();
+let mSpeed = 0, mvx = 0, mvy = 0, camX = 0, camY = 0;
+addEventListener("pointermove", e => {
+  ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  mvx = e.movementX || 0; mvy = e.movementY || 0;
+  mSpeed = Math.min(60, Math.hypot(mvx, mvy));
+});
+
+/* cảm xúc */
+const MOOD = {
+  base: { wind: 0.9, fall: 0.3, count: 0.8, bokeh: 1 },
+  vui:  { wind: 1.3, fall: 0.15, count: 1, bokeh: 1.3 },
+  buon: { wind: 0.35, fall: 1.4, count: 0.35, bokeh: 0.35 },
+  chan: { wind: 0.12, fall: 0.35, count: 0.2, bokeh: 0.25 },
+};
+let cur = { ...MOOD.base }, goal = { ...MOOD.base };
+window.Petals = {
+  setMood(m) { goal = { ...(MOOD[m] || MOOD.base) }; },
+  burst() {
+    for (const o of P) {
+      const d = Math.hypot(o.pos.x, o.pos.y + 0.5);
+      if (o.pos.z > -6 && d < 5) {
+        const k = (5 - d) / 5;
+        o.vel.x += (o.pos.x / (d + .3)) * 5 * k; o.vel.y += (o.pos.y / (d + .3)) * 4 * k + 2 * k; o.vel.z += 2 * k;
+        o.boost = 6;
+      }
+    }
+  },
+};
+
+function resize() {
+  renderer.setSize(innerWidth, innerHeight, false);
+  cam.aspect = innerWidth / innerHeight;
+  cam.fov = cam.aspect < 0.8 ? 65 : 50;
+  cam.updateProjectionMatrix();
+}
+addEventListener("resize", resize); resize();
+
+const clock = new THREE.Clock();
+const m4 = new THREE.Matrix4(), dq = new THREE.Quaternion(), sv = new THREE.Vector3(), tmp = new THREE.Vector3(), cl = new THREE.Vector3();
+let lastRustle = 0;
+function loop() {
+  const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
+  for (const k in cur) cur[k] += (goal[k] - cur[k]) * 0.02;
+  U.uT.value = t; U.uAmt.value = cur.bokeh;
+  mesh.count = Math.max(1, Math.round(N * cur.count));
+
+  // camera lệch nhẹ theo chuột → chiều sâu
+  camX += (ndc.x * 0.5 * (Math.abs(ndc.x) < 2) - camX) * 0.04;
+  camY += (ndc.y * 0.3 * (Math.abs(ndc.y) < 2) - camY) * 0.04;
+  cam.position.set(camX, camY, 6); cam.lookAt(0, 0, -6);
+
+  ray.setFromCamera(ndc, cam);
+  const O = ray.ray.origin, D = ray.ray.direction;
+  const active = mSpeed > 1.5 && !document.body.classList.contains("focus");
+  let hits = 0;
+  for (let i = 0; i < mesh.count; i++) {
+    const o = P[i];
+    const fl = Math.sin(t * 1.7 + o.ph);
+    o.vel.x += (-cur.wind + fl * 0.35 - o.vel.x) * dt * 0.7;
+    o.vel.y += (-cur.fall + Math.cos(t * 1.2 + o.ph) * 0.3 - o.vel.y) * dt * 0.7;
+    o.vel.z += (Math.sin(t * 0.6 + o.ph * 2) * 0.2 - o.vel.z) * dt * 0.5;
+    if (active) {
+      tmp.subVectors(o.pos, O); const proj = tmp.dot(D);
+      if (proj > 0) {
+        cl.copy(D).multiplyScalar(proj).add(O);
+        const d = o.pos.distanceTo(cl), r = 0.9 + proj * 0.06;
+        if (d < r) {
+          tmp.subVectors(o.pos, cl).normalize();
+          const f = (r - d) / r * (0.6 + mSpeed * 0.06);
+          o.vel.x += tmp.x * f * 3 + mvx * 0.02 * f; o.vel.y += tmp.y * f * 3 - mvy * 0.02 * f; o.vel.z += tmp.z * f;
+          o.boost = 4; hits++;
+        }
+      }
+    }
+    o.pos.addScaledVector(o.vel, dt);
+    if (o.pos.x < -B.x - 1.5 || o.pos.y < B.y0 - 1 || o.pos.y > B.y1 + 2 || o.pos.x > B.x + 4) spawn(o, false);
+    dq.setFromAxisAngle(o.axis, o.spin * (1 + o.boost) * dt);
+    o.q.multiply(dq); o.boost *= 0.95;
+    m4.compose(o.pos, o.q, sv.setScalar(o.s));
+    mesh.setMatrixAt(i, m4);
+  }
+  mesh.instanceMatrix.needsUpdate = true;
+  mSpeed *= 0.85; mvx *= 0.85; mvy *= 0.85;
+
+  const now = performance.now();
+  if (hits && now - lastRustle > 280 && typeof Sound !== "undefined") {
+    lastRustle = now;
+    Sound.rustle(Math.min(1.2, 0.3 + hits * 0.12), ndc.x);
+  }
+  renderer.render(scene, cam);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
